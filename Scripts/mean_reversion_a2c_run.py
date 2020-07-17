@@ -12,7 +12,7 @@ model.save("a2c_mean_reversion")
 
 del model
 
-model = TRPO.load("a2c_mean_reversion")
+model = A2C.load("a2c_mean_reversion")
 for episode in range(10):
   obs = env.reset()
   for i in range(1000):
