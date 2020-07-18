@@ -1,13 +1,14 @@
 import gym
 
+from stable_baselines.common.env_checker import check_env
 from stable_baselines.common.policies import MlpPolicy
-from stable_baselines.common import make_vec_env
 from stable_baselines import A2C
 
-env = make_vec_env('gym_rlf:MeanReversion-v0', n_envs=1)
+env = gym.make('gym_rlf:MeanReversion-v0')
+check_env(env)
 
 model = A2C(MlpPolicy, env, verbose=1)
-model.learn(total_timesteps=1000000)
+model.learn(total_timesteps=500000)
 model.save("a2c_mean_reversion")
 
 del model
