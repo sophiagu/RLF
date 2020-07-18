@@ -40,7 +40,9 @@ class MeanReversionEnv(RLFEnv):
     # self.action_space = spaces.Discrete(2) # buy or sell 100 shares of the underlying
     
     # continuous action space
-    self.action_space = spaces.Box(low=-100*self.length, high=100*self.length, shape=(1,), dtype=np.float32)
+    self.action_space = spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)
+    # OpenAI baselines/stable-baselines recommends to normalize continuous action space
+    self.action_space_normalizer = 100*self.length
   
   def getState(self):
     # return {'position': self.position[self.count], 'price': self.price}
@@ -48,7 +50,7 @@ class MeanReversionEnv(RLFEnv):
 
   def step(self, action):
     # make sure we only trade integer number of shares
-    a = round(action[0])
+    a = round(action[0] * self.action_space_normalizer)
     # bound the action
     a = min(100*self.length, a)
     # a = max(-100*self.length-self.position[self.count], a)
