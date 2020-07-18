@@ -53,8 +53,9 @@ class MeanReversionEnv(RLFEnv):
     a = round(action[0] * self.action_space_normalizer)
     # bound the action
     a = min(100*self.length, a)
+    a = min(100*self.length-self.position[self.count], a)
     # a = max(-100*self.length-self.position[self.count], a)
-    # make sure we don't own negative number of shares
+    # If long only: make sure we don't own negative number of shares
     a = max(-self.position[self.count], a)
     new_price = self.equilibrium_price * 10**self.price_process[self.count]
     profit = (new_price - self.price) * self.position[self.count]
