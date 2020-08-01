@@ -42,8 +42,18 @@ class MeanReversionEnv(RLFEnv):
     # continuous action space
     self.action_space = spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)
     # OpenAI baselines/stable-baselines recommends to normalize continuous action space
-    self.action_space_normalizer = 100*self.length
+    self.action_space_normalizer = 100
   
+  def reset(self):
+    self.count = 0
+    self.price_process = get_ou_sequence(self.theta, self.sigma, self.length+1, self.low, self.high)
+    self.price = self.equilibrium_price
+    self.position = np.zeros(self.length+1)
+    self.position[0] = 1000
+    self.cumulative_rewards = [0]
+    
+    return self.getState()
+
   def getState(self):
     # return {'position': self.position[self.count], 'price': self.price}
     return np.array([self.position[self.count], self.price]).astype(np.float32)
@@ -52,10 +62,10 @@ class MeanReversionEnv(RLFEnv):
     # make sure we only trade integer number of shares
     a = round(action[0] * self.action_space_normalizer)
     # bound the action
-    a = min(100*self.length, a)
-    a = min(100*self.length-self.position[self.count], a)
+    a = min(100*self.length-self.position[self.count], a) if\
+     self.position[self.count] > 0 else min(100*self.length, a)
     # a = max(-100*self.length-self.position[self.count], a)
-    # If long only: make sure we don't own negative number of shares
+    # if long only: make sure we don't own negative number of shares
     a = max(-self.position[self.count], a)
     new_price = self.equilibrium_price * 10**self.price_process[self.count]
     profit = (new_price - self.price) * self.position[self.count]
@@ -71,18 +81,10 @@ class MeanReversionEnv(RLFEnv):
     self.position[self.count] = self.position[self.count-1] + a
     if done:
       reward += self.price * self.position[self.count]
-    
+    self.cumulative_rewards.append(self.cumulative_rewards[-1] + reward)
+
     return self.getState(), reward, done, {}
-    
-  def reset(self):
-    self.count = 0
-    self.price_process = get_ou_sequence(self.theta, self.sigma, self.length+1, self.low, self.high)
-    self.price = self.equilibrium_price
-    self.position = np.zeros(self.length+1)
-    self.position[0] = 1000
-    
-    return self.getState()
-    
+ 
   def render(self, mode='human'):
     if mode == 'human':
       folder_name = 'mean_reversion_plots/{}'.format(self.temp_name)
@@ -91,19 +93,20 @@ class MeanReversionEnv(RLFEnv):
             
       if (self.render_count+1) % 1 == 0: # only render every x step(s)
         t = np.linspace(0, self.length, self.length+1)
-        fig, axs = plt.subplots(2, 1, figsize=(16, 16), constrained_layout=True)
+        fig, axs = plt.subplots(3, 1, figsize=(16, 24), constrained_layout=True)
 
         axs[0].plot(t, self.equilibrium_price * 10**self.price_process, label='price')
         axs[1].plot(t, self.position, label='position')
+        axs[2].plot(t, self.cumulative_rewards, label='cumulative P/L')
         axs[0].set_ylabel('price')
         axs[1].set_ylabel('position')
+        axs[2].set_ylabel('cumulative P/L')
         axs[0].legend()
         axs[1].legend()
+        axs[2].legend()
         plt.title('Out-of-sample simulation of RL agent')
         plt.xlabel('steps')
         plt.savefig('mean_reversion_plots/{}/plot_{}.png'.format(self.temp_name, self.render_count))
         plt.close()
-        print(self.position)
-      self.render_count += 1
 
-      
+      self.render_count += 1
