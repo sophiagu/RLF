@@ -21,7 +21,7 @@ class MeanReversionEnv(RLFEnv):
     self.temp_name = next(tempfile._get_candidate_names())
     
     self.equilibrium_price = 100.
-    self.theta, self.sigma, self.length, self.low, self.high = .1, .2, 1000, -2., .301
+    self.theta, self.sigma, self.kappa, self.length, self.low, self.high = .1, .2, 1.0e-4, 1000, -2., .301
     self.linear_cost_multiplier, self.quadratic_cost_multiplier = .2, .15
     self.render_count = 0
     
@@ -71,7 +71,8 @@ class MeanReversionEnv(RLFEnv):
     profit = (new_price - self.price) * self.position[self.count]
     cost = a * new_price
     impact = self.linear_cost_multiplier * np.abs(a) + self.quadratic_cost_multiplier * a**2
-    reward = profit - cost - impact
+    PnL = profit - cost - impact
+    reward = PnL - self.kappa * PnL**2
     
     self.count += 1
     done = self.count % self.length == 0
@@ -80,7 +81,9 @@ class MeanReversionEnv(RLFEnv):
     # self.position[self.count] = self.position[self.count-1] + MeanReversionEnv.ACTION[action[0]]
     self.position[self.count] = self.position[self.count-1] + a
     if done:
-      reward += self.price * self.position[self.count]
+      PnL = self.price * self.position[self.count] - self.linear_cost_multiplier * np.abs(self.position[self.count])\
+       + self.quadratic_cost_multiplier * self.position[self.count]**2
+      reward += PnL - self.kappa * PnL**2
     self.cumulative_rewards.append(self.cumulative_rewards[-1] + reward)
 
     return self.getState(), reward, done, {}
