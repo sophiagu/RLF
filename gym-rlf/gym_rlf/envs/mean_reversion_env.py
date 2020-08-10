@@ -74,7 +74,7 @@ class MeanReversionEnv(RLFEnv):
     self.rewards[self.step_counts] = PnL - .5 * kappa * PnL**2
 
     done = self.step_counts == L
-    if done: # liquidate the remaining new_pos shares of the stock
+    if done: # liquidate the remaining new_pos shares of the security
       add_cost = TickSize * (abs(new_pos) + 1e-2 * new_pos**2)
       add_PnL = new_price * new_pos - add_cost
       self.costs[self.step_counts] += add_cost
