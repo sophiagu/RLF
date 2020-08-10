@@ -20,4 +20,4 @@ The `--optimize` flag will search for the optimal hyperparameters. This is usual
 If you have a saved model, you can comment out the training part and run the agent directly.
 
 #### Advice
-Due to limited computing power, the code is only using 100 trials to search for suitable hyperparameters, but this is already taking very long on a single machine. For better/optimal performance, I expect at least 1000 trials since DRL is mostly about tuning hyperparameters and therefore we should switch to cloud compute instances.
+Due to limited computing power, the code is only using 100 trials to search for suitable hyperparameters, but this is already taking very long on a single machine. For better/optimal performance, I expect at least 1000 trials since DRL is mostly about tuning hyperparameters. If possible we should switch to cloud compute instances.
