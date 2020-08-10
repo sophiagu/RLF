@@ -1,5 +1,4 @@
 import gym
-from gym import logger
 from gym import wrappers, logger
 
 import numpy as np
@@ -9,14 +8,13 @@ from os import path
 from _policies import BinaryActionLinearPolicy, ContinuousActionLinearPolicy # Different file so it can be unpickled
 import argparse
 
+p_e = 50
+
 
 class RandomAgent:
   def __init__(self):
     self.env = gym.make('gym_rlf:MeanReversion-v0')
     self.env.reset()
-    
-    print('observation space:', self.env.observation_space)
-    print('action space:', self.env.action_space)
 
   def act(self, observation, reward, done):
     return self.env.action_space.sample()
@@ -113,9 +111,30 @@ class CEMAgent:
           if done: break
       return total_rew, t+1
 
+
+class SimpleTestAgent:
+  def __init__(self):
+    self.env = gym.make('gym_rlf:MeanReversion-v0')
+    self.env.reset()
     
+    print('observation space:', self.env.observation_space)
+    print('action space:', self.env.action_space)
+
+  def act(self, observation, reward, done):
+    if observation[1] <= 30:
+      return 1
+    elif observation[1] <= 40:
+      return .5
+    elif observation[1] >= 70:
+      return -1
+    elif observation[1] >= 60:
+      return -.5
+    else:
+      return 0
+
+  
 if __name__ == '__main__':
-  logger.set_level(logger.INFO)
+  logger.set_level(logger.ERROR)
   
   parser = argparse.ArgumentParser()
   parser.add_argument('--agent')
@@ -126,6 +145,8 @@ if __name__ == '__main__':
     agent = RandomAgent()
   elif args.agent == 'cem':
     agent = CEMAgent(args)
+  elif args.agent == 'test':
+    agent = SimpleTestAgent()
   else:
     raise NotImplementedError
 
