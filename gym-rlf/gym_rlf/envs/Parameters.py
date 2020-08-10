@@ -4,7 +4,7 @@ TickSize = .1
 LotSize = 100
 M = 10 # maximum round lots for holding
 K = 5 # maximum round lots for each trading action
-H = 5 # half life
+H = 5 # mean reversion half life
 
 Lambda = math.log(2) / H
 sigma = .1
