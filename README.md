@@ -6,7 +6,7 @@ In the folder `Scripts`:
 - The file `run_mean_reversion.py` has some simple/classical agents implemented and is mainly used for testing the custom environment is working;
 - The file `run_mean_reversion_with_baselines.py` implements two OpenAI Baselines agents, PPO2 and A2C, that are chosen because of their ideal properties given our problem: they support continuous action spcace, recurrent policy, and multi processing.
 
-## Instruction to train and run the Baselines agents
+### Instructions to train and run the Baselines agents
 #### Example command
 ```python3 run_mean_reversion_with_baselines.py --agent=A2C --optimize=true```\
 The `--optimize` flag will search for the optimal hyperparameters. This is usually the most time consuming part, so once you've found the optimal hyperparameters, you should pass them into the code and drop the `--optimize` flag.
