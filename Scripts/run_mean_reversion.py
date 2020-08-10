@@ -62,7 +62,7 @@ class CEMAgent:
     return rew
 
   def cem(self, f, th_mean, batch_size, n_iter, elite_frac, initial_std=1.0):
-    """
+    '''
     Generic implementation of the cross-entropy method for maximizing a black-box function
     Args:
       f: a function mapping from vector -> scalar
@@ -77,7 +77,7 @@ class CEMAgent:
       'ys' :  numpy array with values of function evaluated at current population
       'ys_mean': mean value of function over current population
       'theta_mean': mean value of the parameter vector over current population
-    """
+    '''
     n_elite = int(np.round(batch_size*elite_frac))
     th_std = np.ones_like(th_mean) * initial_std
 
