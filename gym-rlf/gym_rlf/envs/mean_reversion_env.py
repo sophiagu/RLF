@@ -15,7 +15,7 @@ from gym_rlf.envs.Parameters import TickSize, LotSize, M, K, Lambda, sigma, kapp
 action_space_normalizer = LotSize * K
 
 MAX_HOLDING = LotSize * M
-MIN_PRICE = round(TickSize, 2)
+MIN_PRICE = round(TickSize, 2) # strictly positive price
 MAX_PRICE = round(TickSize * 1000, 2)
 
 
