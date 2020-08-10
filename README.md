@@ -10,7 +10,7 @@ The folder `Scripts` contains:
 - Python 3
 - Tensorflow 2.0
 - Gym
-- Stable Baselines: Stable Baselines is written in TF1 but TF2 provides a script to auto convert TF1 to TF2 (however after that, you still need to make some small changes manually)
+- Stable Baselines: Stable Baselines is written in TF1 but TF2 provides a script that auto converts TF1 to TF2 (however after that, you still need to make some small changes manually)
 - Optuna
 
 ### Instructions to train and run the Baselines agents
