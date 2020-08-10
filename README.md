@@ -1,8 +1,8 @@
 # RLF
 
-All the custom environments lie under the folder `gym-rlf`.
+All the custom environments are living under the folder `gym-rlf`.
 
-In the folder `Scripts`:
+The folder `Scripts` contains:
 - The file `run_mean_reversion.py` has some simple/classical agents implemented and is mainly used for testing the custom environment is working;
 - The file `run_mean_reversion_with_baselines.py` implements two OpenAI Baselines agents, PPO2 and A2C, that are chosen because of their ideal properties given our problem: they support continuous action spcace, recurrent policy, and multi processing.
 
