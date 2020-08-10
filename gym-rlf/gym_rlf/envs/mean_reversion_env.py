@@ -11,7 +11,7 @@ from gym_rlf.envs.Parameters import TickSize, LotSize, M, K, Lambda, sigma, kapp
 
 # OpenAI Baselines recommends to normalize continuous action space because the Baselines
 # agents only sample actions from a standard Gaussian.
-# We use a space normalizer to rescale action space to [-LotSize * K, LotSize * K].
+# We use a space normalizer to rescale the action space to [-LotSize * K, LotSize * K].
 action_space_normalizer = LotSize * K
 
 MAX_HOLDING = LotSize * M
