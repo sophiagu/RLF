@@ -80,6 +80,7 @@ if __name__ == '__main__':
     print(study.best_params)
     model = train(agent, False, study.best_params)
   else:
+    # Pass in the best hyperparameters if you've already tuned them.
     model = train(agent, False)
   model.save(agent + '_mean_reversion')
 
