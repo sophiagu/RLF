@@ -7,7 +7,7 @@ The folder `Scripts` contains:
 - The file `run_mean_reversion_with_baselines.py` implements two OpenAI Baselines agents, PPO2 and A2C, that are chosen because of their ideal properties given our problem: they support continuous action space+observation space, recurrent policy, and multi processing.
 
 ### Prerequisites
-- Python3
+- Python 3
 - Tensorflow 2.0
 - Gym
 - Stable Baselines: Stable Baselines is written in TF1 but TF2 provides a script to auto convert TF1 to TF2 (however after that, you still need to make some small changes manually)
