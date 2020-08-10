@@ -6,6 +6,13 @@ In the folder `Scripts`:
 - The file `run_mean_reversion.py` has some simple/classical agents implemented and is mainly used for testing the custom environment is working;
 - The file `run_mean_reversion_with_baselines.py` implements two OpenAI Baselines agents, PPO2 and A2C, that are chosen because of their ideal properties given our problem: they support continuous action spcace, recurrent policy, and multi processing.
 
+### Prerequisites
+- Python3
+- Tensorflow 2.0
+- Gym
+- Stable Baselines: Stable Baselines is written in TF1 but TF2 provides a script to auto convert TF1 to TF2 (however after that, you still need to make some small changes manually)
+- Optuna
+
 ### Instructions to train and run the Baselines agents
 #### Example command
 ```python3 run_mean_reversion_with_baselines.py --agent=A2C --optimize=true```\
