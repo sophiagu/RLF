@@ -52,9 +52,9 @@ class MeanReversionEnv(RLFEnv):
     self.rewards = np.zeros(L+1)
     self.profits = np.zeros(L+1)
     self.costs = np.zeros(L+1)
-    return self.getState()
+    return self.get_state()
 
-  def getState(self):
+  def get_state(self):
     return np.array([self.positions[self.step_counts], self.prices[self.step_counts]]).astype(np.float64)
     
   def step(self, action):
@@ -81,7 +81,7 @@ class MeanReversionEnv(RLFEnv):
       self.profits[self.step_counts] += add_PnL + add_cost
       self.rewards[self.step_counts] += add_PnL - .5 * kappa * add_PnL**2
 
-    return self.getState(), self.rewards[self.step_counts], done, {}
+    return self.get_state(), self.rewards[self.step_counts], done, {}
  
   def render(self, mode='human'):
     if mode == 'human':
