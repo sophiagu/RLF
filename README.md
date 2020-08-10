@@ -1,6 +1,6 @@
 # RLF
 
-All the custom environments lie under the folder `Environments`.
+All the custom environments lie under the folder `gym-rlf`.
 
 In the folder `Scripts`:
 - The file `run_mean_reversion.py` has some simple/classical agents implemented and is mainly used for testing the custom environment is working;
