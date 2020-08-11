@@ -11,12 +11,14 @@ from gym_rlf.envs.Parameters import TickSize, sigma, kappa, alpha, factor_alpha,
 class APTEnv(RLFEnv):
   def __init__(self):
     super(APTEnv, self).__init__(100, 'apt_plots/')
-
+    
+    # Use a Box to represent the action space with the first param being
+    # (trade of the security) and the second param being (trade of the factor security).
     self.action_space = spaces.Box(
       low=np.array([-1, -1]),
       high=np.array([1, 1]),
       shape=(2,))
-    # Use a Box to represent an observation space with the params: (position of the security),
+    # Use a Box to represent the observation space with the params: (position of the security),
     # (position of the factor security) and (price of the security).
     # The price of the factor security is hidden.
     self.observation_space = spaces.Box(
