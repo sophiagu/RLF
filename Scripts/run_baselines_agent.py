@@ -32,7 +32,6 @@ def train(env_id, agent, model_params, is_evaluation, evaluation_steps, train_st
   elif agent == 'a2c':
     model = A2C(MlpLstmPolicy, envs, verbose=1, **model_params)
 
-  # NOTE: Training or evaluation steps must be multiples of test size L.
   if is_evaluation:
     model.learn(total_timesteps=evaluation_steps)
   else:
@@ -67,9 +66,11 @@ if __name__ == '__main__':
   parser.add_argument('--num_eps', type=int, default=10,
                       help='Number of episodes to run the final model after training.')
   parser.add_argument('--evaluation_steps', type=int, default=500000,
-                      help='Number of total timesteps that the model runs when evaluating hyperparameters.')
+                      help=('Number of total timesteps that the model runs when evaluating hyperparameters.'
+                            'This number must be a multiple of the environment episode size L.'))
   parser.add_argument('--train_steps', type=int, default=1000000,
-                      help='Number of total timesteps that the model runs during training.')
+                      help=('Number of total timesteps that the model runs during training.'
+                            'This number must be a multiple of the environment episode size L.'))
   args = parser.parse_args()
   agent = args.agent.lower()
   if agent not in ['ppo2', 'a2c']:
@@ -121,4 +122,5 @@ if __name__ == '__main__':
       zero_completed_obs[0, :], reward, done, _ = test_env.env_method('step', action[0], indices=0)[0]
     test_env.env_method('render', indices=0)
 
+  envs.close()
   test_env.close()
