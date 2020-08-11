@@ -16,7 +16,7 @@ The folder `Scripts` contains:
 - SQLite
 
 ### Instructions to train and run the Baselines agents
-#### Example command
+#### Example usage
 ```python3 run_baselines_agent.py --env=mean_reversion --agent=A2C --optimize=true --num_trials=100 --num_eps=10 --evaluation_steps=500000 --train_steps=1000000```\
 The `--optimize` flag will search for the optimal hyperparameters. This is usually the most time consuming part, so once you've found the optimal hyperparameters, you should set the `--optimize` flag to `false` and let the code load the best hyperparameters from the db.\
 If you have a saved model, you can comment out the training part and run the agent directly.
