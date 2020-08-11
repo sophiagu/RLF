@@ -1,8 +1,8 @@
 # RLF
 
 All the custom environments are living under the folder `gym-rlf`. Right now we have the following environments:
-- `mean_reversion_env`: A custom env for a security price process that exhibits mean reversion and whose log values follows a Ornstein-Uhlenbeck process;
-- `apt_env`: A custom env for a single factor Arbitrage Pricing Theorem model.
+- `MeanReversionEnv`: A custom env for a security price process that exhibits mean reversion and whose log values follows a Ornstein-Uhlenbeck process;
+- `APTEnv`: A custom env for a single factor Arbitrage Pricing Theorem model.
 
 The folder `Scripts` contains:
 - The file `run_baselines_agent.py` implements two OpenAI Baselines agents, PPO2 and A2C, that are chosen because of their ideal properties given our problems: they support continuous action space+observation space, recurrent policy, and multi processing.
