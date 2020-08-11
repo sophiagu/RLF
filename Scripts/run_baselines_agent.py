@@ -65,10 +65,10 @@ if __name__ == '__main__':
                       help='Number of trials to search for optimal hyperparameters.')
   parser.add_argument('--num_eps', type=int, default=10,
                       help='Number of episodes to run the final model after training.')
-  parser.add_argument('--evaluation_steps', type=int, default=500000,
+  parser.add_argument('--evaluation_steps', type=int, default=5e5,
                       help=('Number of total timesteps that the model runs when evaluating hyperparameters.'
                             'This number must be a multiple of the environment episode size L.'))
-  parser.add_argument('--train_steps', type=int, default=1000000,
+  parser.add_argument('--train_steps', type=int, default=1e6,
                       help=('Number of total timesteps that the model runs during training.'
                             'This number must be a multiple of the environment episode size L.'))
   args = parser.parse_args()
