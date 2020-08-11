@@ -13,7 +13,7 @@ class MeanReversionEnv(RLFEnv):
     super(MeanReversionEnv, self).__init__(1000, 'mean_reversion_plots/')
 
     self.action_space = spaces.Box(low=-1, high=1, shape=(1,))
-    # Use a Box to represent an observation space with the first param being (position)
+    # Use a Box to represent the observation space with the first param being (position)
     # and the second param being (price).
     self.observation_space = spaces.Box(
       low=np.array([-MAX_HOLDING, MIN_PRICE]),
