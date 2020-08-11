@@ -18,8 +18,8 @@ The folder `Scripts` contains:
 ### Instructions to train and run the Baselines agents
 #### Example usage
 ```python3 run_baselines_agent.py --env=mean_reversion --agent=A2C --optimize=true --num_trials=100 --num_eps=10 --evaluation_steps=500000 --train_steps=1000000```\
-The `--optimize` flag will search for the optimal hyperparameters. This is usually the most time consuming part, so once you've found the optimal hyperparameters, you should set the `--optimize` flag to `false` and let the code load the best hyperparameters from the db.\
-If you have a saved model, you can comment out the training part and run the agent directly.
 
-#### Advice
-Due to limited computing power, the code is only using 100 trials to search for suitable hyperparameters, but this is already taking very long on a single machine. For better/optimal performance, I expect at least 1000 trials since DRL is mostly about tuning hyperparameters. If possible we should switch to using cloud compute instances.
+#### Tips
+- The `--optimize` flag will search for the optimal hyperparameters. This is usually the most time consuming part, so once you've found the optimal hyperparameters, you should set the `--optimize` flag to `false` and let the code load the best hyperparameters from the db.
+- If you have a saved model, you can comment out the training part and run the agent directly.
+- Due to limited computing power, the code is only using 100 trials to search for suitable hyperparameters, but this is already taking very long on a single machine. For better/optimal performance, I expect at least 1000 trials since DRL is mostly about tuning hyperparameters. If possible we should switch to using cloud compute instances.
