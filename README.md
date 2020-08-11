@@ -1,7 +1,7 @@
 # RLF
 
 All the custom environments are living under the folder `gym-rlf`. Right now we have the following environments:
-- `MeanReversionEnv`: A custom env for a security whose price process exhibits mean reversion property and its log value follows a Ornstein-Uhlenbeck process;
+- `MeanReversionEnv`: A custom env for a security whose price process exhibits mean reversion property and its log value follows an Ornstein-Uhlenbeck process;
 - `APTEnv`: A custom env for a single factor Arbitrage Pricing Theorem model.
 
 The folder `Scripts` contains:
