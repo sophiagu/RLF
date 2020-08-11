@@ -18,9 +18,9 @@ from stable_baselines.common.vec_env import SubprocVecEnv
 from stable_baselines.common.vec_env.vec_normalize import VecNormalize
 from stable_baselines import A2C, PPO2
 
-ENV_ID = 'gym_rlf:MeanReversion-v0'
+ENV_ID = 'gym_rlf:APT-v0'
 NUM_CPU = multiprocessing.cpu_count()
-L = 1000
+L = 100
 
 def train(agent, model_params, is_evaluation):
   if is_evaluation: # evaluate_policy() must only take one environment
@@ -36,9 +36,9 @@ def train(agent, model_params, is_evaluation):
 
   # NOTE: Training or evaluation steps must be multiples of test size L.
   if is_evaluation:
-    model.learn(total_timesteps=500000)
+    model.learn(total_timesteps=50000)
   else:
-    model.learn(total_timesteps=1000000)
+    model.learn(total_timesteps=100000)
 
   envs.close()
   return model
@@ -71,8 +71,8 @@ if __name__ == '__main__':
     raise NotImplementedError
 
   study = optuna.create_study(
-    study_name=agent + '-mean-reversion-study',
-    storage='sqlite:///{}_mean_reversion.db'.format(agent),
+    study_name=agent + '-apt-study',
+    storage='sqlite:///{}_apt.db'.format(agent),
     load_if_exists=True)
 
   if args.optimize:
@@ -84,19 +84,19 @@ if __name__ == '__main__':
     print('best trial =', study.best_trial)
 
   model = train(agent, study.best_params, False)
-  model.save(agent + '_mean_reversion')
+  model.save(agent + '_apt')
 
   del model
   if agent == 'ppo2':
-    model = PPO2.load(agent + '_mean_reversion')
+    model = PPO2.load(agent + '_apt')
   elif agent == 'a2c':
-    model = A2C.load(agent + '_mean_reversion')
+    model = A2C.load(agent + '_apt')
 
   test_env = SubprocVecEnv([make_env(ENV_ID)])
   for episode in range(10):
     # Padding zeros to the test env to match the shape of the training env.
     # The 2nd entry is the shape of the observation space.
-    zero_completed_obs = np.zeros((NUM_CPU,) + (2,))
+    zero_completed_obs = np.zeros((NUM_CPU,) + (3,))
     zero_completed_obs[0, :] = test_env.reset()
     state = None
     for _ in range(L):
