@@ -59,7 +59,7 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   parser.add_argument('--env', type=str)
   parser.add_argument('--agent', type=str, default='ppo2')
-  parser.add_argument('--optimize', type=bool, default=True,
+  parser.add_argument('--optimize', type=bool, default=False,
                       help='Whether to search for optimal hyperparameters.')
   parser.add_argument('--num_trials', type=int, default=100,
                       help='Number of trials to search for optimal hyperparameters.')
