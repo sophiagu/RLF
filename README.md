@@ -5,7 +5,7 @@ All the custom environments are living under the folder `gym-rlf`. Right now we 
 - `APTEnv`: A custom env for a single factor Arbitrage Pricing Theorem model.
 
 The folder `Scripts` contains:
-- `run_baselines_agent.py`: It implements two OpenAI Baselines agents: `PPO2` and `A2C`. I chose them because they both support continuous action/observation space, recurrent policy, and multi processing, which are desired properties for our set of problems. The default algorithm is set to `PPO2` because it combines ideas from A2C and TRPO (see [here](https://stable-baselines.readthedocs.io/en/master/modules/ppo2.html#id1)).
+- `run_baselines_agent.py`: It implements two OpenAI Baselines agents: `PPO2` and `A2C`. I chose them because they both support continuous action/observation space, recurrent policy, and multi processing, which are desired properties for our set of problems. The default algorithm is set to `PPO2` because it combines ideas from both `A2C` and `TRPO` (see [here](https://stable-baselines.readthedocs.io/en/master/modules/ppo2.html#id1)).
 
 ### Prerequisites
 - Python 3
