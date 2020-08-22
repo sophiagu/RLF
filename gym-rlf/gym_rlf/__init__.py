@@ -14,3 +14,8 @@ register(
     id='APT-v0',
     entry_point='gym_rlf.envs:APTEnv',
 )
+
+register(
+    id='DeltaHedging-v0',
+    entry_point='gym_rlf.envs:DeltaHedgingEnv',
+)
