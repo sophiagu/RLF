@@ -28,6 +28,7 @@ def _train(env_id, agent, model_params, total_steps, is_evaluation=False):
     envs = SubprocVecEnv([make_env(env_id) for _ in range(NUM_CPU)])
   envs = VecNormalize(envs) # normalize the envs during training and evaluation
 
+  # Load pretrained model during training.
   if not is_evaluation and os.path.exists(agent + '_' + env_id):
     if agent == 'ppo2':
       model = PPO2.load(agent + '_' + env_id)
@@ -52,7 +53,7 @@ def _search_hparams(env_id, agent, total_steps, trial):
   mean_reward, _ = evaluate_policy(model, envs, n_eval_episodes=10)
   
   envs.close()
-  # Negate the reward because Optuna maximizes the negative log likelihood.
+  # Negate the reward because Optuna minimizes lost.
   return -mean_reward
 
 def _eval_model(model, env_id, L, ob_shape, num_eps, plot=False):
@@ -88,7 +89,7 @@ if __name__ == '__main__':
   parser.add_argument('--evaluation_steps', type=int, default=500000,
                       help=('Number of total timesteps that the model runs when evaluating hyperparameters.'
                             'This number must be a multiple of the environment episode size L.'))
-  parser.add_argument('--max_train_steps', type=int, default=1000000,
+  parser.add_argument('--max_train_steps', type=int, default=5000000,
                       help=('Max number of total timesteps that the model runs during training.'
                             'This number must be a multiple of the environment episode size L.'))
   args = parser.parse_args()
@@ -103,6 +104,10 @@ if __name__ == '__main__':
   elif args.env == 'apt':
     env_id = 'gym_rlf:APT-v0'
     study_name = agent + '-apt-study'
+    L = 100
+  elif args.env == 'delta_hedging':
+    env_id = 'gym_rlf:DeltaHedging-v0'
+    study_name = agent + '-delta-hedging-study'
     L = 100
   else:
     raise NotImplementedError
@@ -127,14 +132,15 @@ if __name__ == '__main__':
   best_sr = 0
   for i in range(args.max_train_steps // (50 * L)):
     envs, model = _train(env_id, agent, study.best_params, 50 * L)
-    sharpe_ratio = _eval_model(model, env_id, L, envs.observation_space.shape, 50)
-    print('sharpe ratio =', sharpe_ratio)
+    sharpe_ratio = _eval_model(model, env_id, L, envs.observation_space.shape, 10)
     if sharpe_ratio > best_sr:
       sharpe_ratio = best_sr
       model.save(agent + '_' + args.env)
-    elif best_sr >= 2:
+    elif best_sr >= 1:
       print('Training stopped after {} episodes with sharpe ratio {}.'.format(i + 1, best_sr))
       break
+  print('best sharpe ratio =', best_sr)
+  model.save(agent + '_' + args.env + '_final')
 
   del model
   if agent == 'ppo2':
