@@ -11,7 +11,7 @@ The folder `Scripts` contains:
 - Python 3
 - Tensorflow 2.0
 - Gym
-- [stable-baselines](https://github.com/hill-a/stable-baselines) and [stable-baselines-tf2](https://github.com/sophiagu/stable-baselines-tf2)
+- [stable-baselines](https://github.com/hill-a/stable-baselines) and replace part of it with [stable-baselines-tf2](https://github.com/sophiagu/stable-baselines-tf2)
 - Optuna
 - SQLite
 
