@@ -5,7 +5,7 @@ import tempfile
 
 from gym_rlf.envs.Parameters import TickSize, LotSize, M, K, p_e
 
-# OpenAI Baselines recommends to normalize continuous action space because the Baselines
+# Stable Baselines recommends to normalize continuous action space because the Baselines
 # agents only sample actions from a standard Gaussian.
 # We use a space normalizer to rescale the action space to [-LotSize * K, LotSize * K].
 action_space_normalizer = LotSize * K
@@ -13,8 +13,8 @@ action_space_normalizer = LotSize * K
 MAX_HOLDING = LotSize * M
 MIN_PRICE = round(TickSize, 2) # strictly positive price
 MAX_PRICE = round(TickSize * 1000, 2)
-
-
+  
+  
 class RLFEnv(gym.Env):
   metadata = {'render.modes': ['human']}
 
@@ -37,20 +37,14 @@ class RLFEnv(gym.Env):
     self._states = []
     self._actions = []
 
-  def _get_state(self):
-    raise NotImplementedError
-    
   def get_sharpe_ratio(self):
     return 16 * np.mean(self._rewards) / np.std(self._rewards)
 
-  def _learn_func_property(self, func):
-    num_past_data = len(self._states) - 1
-    if num_past_data <= 0: return 0
+  def _get_state(self):
+    raise NotImplementedError
 
-    penalty = 0
-    for i in range(num_past_data):
-      penalty += func(self._states[i], self._states[-1], self._actions[i], self._actions[-1])
-    return penalty / num_past_data
+  def _learn_func_property(self, func):
+    pass
     
   def step(self, action):
     raise NotImplementedError

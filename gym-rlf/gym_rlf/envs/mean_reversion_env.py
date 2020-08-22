@@ -5,10 +5,7 @@ import numpy as np
 
 from gym import spaces
 from gym_rlf.envs.rlf_env import RLFEnv, action_space_normalizer, MAX_HOLDING, MIN_PRICE, MAX_PRICE
-from gym_rlf.envs.Parameters import TickSize, Lambda, sigma, kappa, p_e
-
-PENALTY_WEIGHT = 1000
-MAX_PENALTY = 5000
+from gym_rlf.envs.Parameters import TickSize, Lambda, sigma, kappa, p_e, PENALTY_WEIGHT, MAX_PENALTY
 
 def func_property(s1, s2, a1, a2):
   if (a1 - a2) * (s1 - s2) <= 0: # monotonic decreasing
@@ -31,7 +28,7 @@ class MeanReversionEnv(RLFEnv):
 
   def _next_price(self, p):
     x = np.log(p / p_e)
-    rn = np.random.normal(0, 1.0, 1)[0]
+    rn = np.random.normal(0, 1., 1)[0]
     x = x - Lambda * x + sigma * rn
     p_new = p_e * np.exp(x)
     p_new = min(p_new, MAX_PRICE)
@@ -45,6 +42,15 @@ class MeanReversionEnv(RLFEnv):
 
   def _get_state(self):
     return np.array([self._positions[self._step_counts], self._prices[self._step_counts]])
+    
+  def _learn_func_property(self, func):
+    num_past_data = len(self._states) - 1
+    if num_past_data <= 0: return 0
+
+    penalty = 0
+    for i in range(num_past_data):
+      penalty += func(self._states[i], self._states[-1], self._actions[i], self._actions[-1])
+    return penalty / num_past_data
 
   def step(self, action):
     ac = round(action[0] * action_space_normalizer)
@@ -72,8 +78,8 @@ class MeanReversionEnv(RLFEnv):
       
     # Incorporate function property.
     self._states.append(new_price)
-    if abs(new_pos) > 0:
-      self._actions.append(ac/new_pos)
+    if abs(old_pos) > 0:
+      self._actions.append(ac/old_pos)
     else:
       self._actions.append(ac)
     self._rewards[self._step_counts] -= self._learn_func_property(func_property)
