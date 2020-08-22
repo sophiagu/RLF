@@ -15,7 +15,10 @@ The folder `Scripts` contains:
 - Optuna
 - SQLite
 
+**NOTE:** Before running the code, `cd` into `gym-rlf/` and register the envs: ```pip install -e .```.
+
 ### Instructions to train and run the Baselines agents
+
 #### Example usage
 ```python3 run_baselines_agent.py --env=mean_reversion --agent=A2C --optimize=true --num_trials=100 --num_eps=10 --evaluation_steps=500000 --train_steps=1000000```
 
