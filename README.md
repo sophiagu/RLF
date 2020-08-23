@@ -24,7 +24,7 @@ sudo apt-get install sqlite3
 ```
 pip install -e .
 ```
-- And `cd` into `Scripts/` to make a folder (folder name = env_id + '_plots') for saving the plots (e.g. for mean_reversion):
+- And `cd` into `Scripts/` to make a folder (`folder name` = `env_id` + '_plots') for saving the plots (*e.g.* for mean_reversion):
 ```
 mkdir mean_reversion_plots
 ```
