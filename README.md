@@ -19,7 +19,10 @@ python3 -m pip install numpy scipy tensorflow gym stable-baselines optuna
 sudo apt-get install sqlite3
 ```
 
-**NOTE:** Before running the code, `cd` into `gym-rlf/` and register the envs: ```pip install -e .```.
+**NOTE:** Before running the code, `cd` into `gym-rlf/` and register the envs:
+```
+pip install -e .
+```
 
 ### Instructions to train and run the Baselines agents
 
