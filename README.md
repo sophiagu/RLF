@@ -15,6 +15,9 @@ The folder `Scripts` contains:
 - Optuna
 - SQLite
 ```
+sudo apt-get update
+sudo apt-get -y upgrade
+sudo apt-get install -y python3-pip
 python3 -m pip install numpy scipy tensorflow gym stable-baselines optuna
 sudo apt-get install sqlite3
 ```
