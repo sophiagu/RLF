@@ -15,7 +15,8 @@ sudo apt-get install -y python3-pip
 python3 -m pip install numpy scipy tensorflow gym stable-baselines optuna
 sudo apt-get install sqlite3
 ```
-Follow instructions in [stable-baselines-tf2](https://github.com/sophiagu/stable-baselines-tf2) to modify `stable-baselines`.
+Follow instructions in [stable-baselines-tf2](https://github.com/sophiagu/stable-baselines-tf2) to modify `stable-baselines`.\
+`git clone` this repo.
 
 **NOTE:**
 - Before running the script, `cd` into `gym-rlf/` and register the envs:
