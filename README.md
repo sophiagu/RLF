@@ -19,9 +19,14 @@ python3 -m pip install numpy scipy tensorflow gym stable-baselines optuna
 sudo apt-get install sqlite3
 ```
 
-**NOTE:** Before running the code, `cd` into `gym-rlf/` and register the envs:
+**NOTE:**
+- Before running the script, `cd` into `gym-rlf/` and register the envs:
 ```
 pip install -e .
+```
+- And `cd` into `Scripts/` to make a folder (folder name = env_id + '_plots') for saving the plots (e.g. for mean_reversion):
+```
+mkdir mean_reversion_plots
 ```
 
 ### Instructions to train and run the Baselines agents
