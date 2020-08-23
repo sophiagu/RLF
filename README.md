@@ -14,6 +14,10 @@ The folder `Scripts` contains:
 - [stable-baselines](https://github.com/hill-a/stable-baselines) and replace part of it with [stable-baselines-tf2](https://github.com/sophiagu/stable-baselines-tf2)
 - Optuna
 - SQLite
+```
+python3 -m pip install numpy scipy tensorflow gym stable-baselines optuna
+sudo apt-get install sqlite3
+```
 
 **NOTE:** Before running the code, `cd` into `gym-rlf/` and register the envs: ```pip install -e .```.
 
