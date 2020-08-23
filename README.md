@@ -37,6 +37,6 @@ python3 run_baselines_agent.py --env=mean_reversion --optimize=true
 ```
 
 #### Tips
-- The `--optimize` flag will search for the optimal hyperparameters. This is usually the most time consuming part, so once you've found the optimal hyperparameters, you should set the `--optimize` flag to `false` and let the code load the best hyperparameters from the db;
-- If you have a saved model, you can comment out the training part and run the agent directly;
-- Due to limited computing power, the code is only using 100 trials to search for suitable hyperparameters, but it's already taking very long on a single machine. For better/optimal performance, I expect at least 1000 trials since as of today DRL is still [very unstable](https://www.alexirpan.com/2018/02/14/rl-hard.html) and carefully tuning the hyperparameters seems to be one of very few ways to reduce the pain. So if possible we should switch to use cloud compute instances.
+- The `--optimize` flag will search for the optimal hyperparameters. This is usually the most time consuming part, so once you've found the optimal hyperparameters, you should drop the `--optimize` flag and let the code load the best hyperparameters from the db;
+- The hyperparameters need to be `--optimize`d at least once;
+- If you have a saved model, you can comment out the training part and run the agent directly.
