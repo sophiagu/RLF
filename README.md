@@ -39,3 +39,7 @@ python3 run_baselines_agent.py --env=mean_reversion --optimize=true
 - The `--optimize` flag will search for the optimal hyperparameters. This is usually the most time consuming part, so once you've found the optimal hyperparameters, you should drop the `--optimize` flag and let the code load the best hyperparameters from the db;
 - The hyperparameters need to be `--optimize`d at least once;
 - If you have a saved model, you can comment out the training part and run the agent directly.
+
+### Troubleshoot
+- Check failed: PyBfloat16_Type.tp_base != nullptr 
+Follow https://www.programmersought.com/article/6151650908/ to uninstall and reinstall `numpy`.
