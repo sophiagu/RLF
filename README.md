@@ -41,5 +41,5 @@ python3 run_baselines_agent.py --env=mean_reversion --optimize=true
 - If you have a saved model, you can comment out the training part and run the agent directly.
 
 ### Troubleshoot
-- Check failed: PyBfloat16_Type.tp_base != nullptr 
+- `Check failed: PyBfloat16_Type.tp_base != nullptr`\
 Follow https://www.programmersought.com/article/6151650908/ to uninstall and reinstall `numpy`.
