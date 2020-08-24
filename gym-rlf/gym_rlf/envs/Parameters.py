@@ -19,6 +19,3 @@ factor_alpha = -.01
 factor_sensitivity = .5
 factor_sigma = .12
 p_e = 50
-
-PENALTY_WEIGHT = 5000
-MAX_PENALTY = 5000

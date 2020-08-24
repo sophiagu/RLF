@@ -6,7 +6,11 @@ import numpy as np
 
 from gym import spaces
 from gym_rlf.envs.rlf_env import RLFEnv, action_space_normalizer, MIN_PRICE, MAX_PRICE
-from gym_rlf.envs.Parameters import TickSize, OptionSize, T, S0, sigma_dh, kappa_dh, PENALTY_WEIGHT, MAX_PENALTY
+from gym_rlf.envs.Parameters import TickSize, OptionSize, T, S0, sigma_dh, kappa_dh
+
+PENALTY_WEIGHT = 1
+MAX_PENALTY = 10000
+
 from scipy.stats import norm
 
 def insertion_sort(states, actions):
@@ -24,13 +28,10 @@ def insertion_sort(states, actions):
 
 def func_property(s0, s1, s2, a0, a1, a2):
   # Assume the state action pairs are sorted by s0 <= s1 <= s2.
-  if s1 == s0 or s2 == s0: return 0
-  grad1 = (a1 - a0) / (s1 - s0)
-  grad2 = (a2 - a0) / (s2 - s0)
-  if grad1 >= grad2: # concave
-    return 0
-  else:
-    return min(MAX_PENALTY, PENALTY_WEIGHT * (grad2 - grad1)**2)
+  if s2 == s0: return 0
+  baseline_action = [(s2 - s1) * a0 + (s1 - s0) * a2] / (s2 - s0)
+  if a1 >= baseline_action: return 0
+  return min(MAX_PENALTY, (baseline_action - a2)**2)
     
 def BSM_call_price_and_delta(K, tau, St, sigma):
   if tau <= 0: return 0, 0
@@ -76,18 +77,14 @@ class DeltaHedgingEnv(RLFEnv):
     return np.array([self._positions[self._step_counts], T - self._step_counts, self._prices[self._step_counts]])
     
   def _learn_func_property(self, func):
+    if len(self._states) <= 2: return 0
     j = insertion_sort(self._states, self._actions)
-    num_data = len(self._states)
-    if num_data <= 2: return 0
-
     penalty = 0
-    for i in range(1, j):
-      penalty += func(self._states[0], self._states[i], self._states[j],
-                      self._actions[0], self._actions[i], self._actions[j])
-    for i in range(j+1, num_data):
-      penalty += func(self._states[0], self._states[j], self._states[i],
-                      self._actions[0], self._actions[j], self._actions[i])
-    return penalty / (num_data - 2)
+    for i in range(0, j):
+      for k in range(j+1, len(self._states)):
+        penalty += func(self._states[i], self._states[j], self._states[k],
+                        self._actions[i], self._actions[j], self._actions[k])
+    return penalty
 
   def step(self, action):
     ac = round(action[0] * action_space_normalizer)
@@ -115,7 +112,7 @@ class DeltaHedgingEnv(RLFEnv):
       self._actions.append(ac/old_pos)
     else:
       self._actions.append(ac)
-    self._rewards[self._step_counts] -= self._learn_func_property(func_property)
+    self._rewards[self._step_counts] -= PENALTY_WEIGHT * self._learn_func_property(func_property)
 
     return self._get_state(), self._rewards[self._step_counts], done, {}
  
