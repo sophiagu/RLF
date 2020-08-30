@@ -7,6 +7,8 @@ from gym import spaces
 from gym_rlf.envs.rlf_env import RLFEnv, action_space_normalizer, MAX_HOLDING, MIN_PRICE, MAX_PRICE
 from gym_rlf.envs.Parameters import TickSize, sigma, kappa, alpha, factor_alpha, factor_sensitivity, factor_sigma, p_e
 
+IS_HYPERPARAMETER_SEARCH = True
+
 
 class APTEnv(RLFEnv):
   def __init__(self):
@@ -50,41 +52,36 @@ class APTEnv(RLFEnv):
     return self._get_state()
 
   def _get_state(self):
-    return np.array([self._positions[self._step_counts],
-                     self._factor_positions[self._step_counts],
-                     self._prices[self._step_counts]])
+    return np.array([self._positions[self._step_counts % self._L],
+                     self._factor_positions[self._step_counts % self._L],
+                     self._prices[self._step_counts % self._L]])
     
   def step(self, action):
     ac1 = round(action[0] * action_space_normalizer)
     ac2 = round(action[1] * action_space_normalizer)
 
-    old_pos = self._positions[self._step_counts]
-    old_factor_pos = self._factor_positions[self._step_counts]
-    old_price = self._prices[self._step_counts]
-    old_factor_price = self._factor_prices[self._step_counts]
+    old_pos = self._positions[self._step_counts % self._L]
+    old_factor_pos = self._factor_positions[self._step_counts % self._L]
+    old_price = self._prices[self._step_counts % self._L]
+    old_factor_price = self._factor_prices[self._step_counts % self._L]
     self._step_counts += 1
-    new_pos = self._positions[self._step_counts] = max(min(old_pos + ac1, MAX_HOLDING), -MAX_HOLDING)
-    new_factor_pos = self._factor_positions[self._step_counts] = max(min(old_factor_pos + ac2, MAX_HOLDING), -MAX_HOLDING)
-    new_price, new_factor_price = self._prices[self._step_counts], self._factor_prices[self._step_counts] =\
+    new_pos = self._positions[self._step_counts % self._L] =\
+      max(min(old_pos + ac1, MAX_HOLDING), -MAX_HOLDING)
+    new_factor_pos = self._factor_positions[self._step_counts % self._L] =\
+      max(min(old_factor_pos + ac2, MAX_HOLDING), -MAX_HOLDING)
+    new_price, new_factor_price =\
+      self._prices[self._step_counts % self._L], self._factor_prices[self._step_counts % self._L] =\
       self._next_price(old_price, old_factor_price)
 
     trade_size = abs(new_pos - old_pos) + abs(new_factor_pos - old_factor_pos)
     cost = TickSize * (trade_size + 1e-2 * trade_size**2)
     PnL = (new_price - old_price) * old_pos + (new_factor_price - old_factor_price) * old_factor_pos - cost
-    self._costs[self._step_counts] = cost
-    self._profits[self._step_counts] = PnL + cost
-    self._rewards[self._step_counts] = PnL - .5 * kappa * PnL**2
+    self._costs[self._step_counts % self._L] = cost
+    self._profits[self._step_counts % self._L] = PnL + cost
+    self._rewards[self._step_counts % self._L] = PnL - .5 * kappa * PnL**2
 
-    done = self._step_counts == self._L
-    if done: # liquidate the remaining securities and factor securities
-      add_trade_size = abs(new_pos) + abs(new_factor_pos)
-      add_cost = TickSize * (add_trade_size + 1e-2 * add_trade_size**2)
-      add_PnL = new_price * new_pos + new_factor_price * new_factor_pos - add_cost
-      self._costs[self._step_counts] += add_cost
-      self._profits[self._step_counts] += add_PnL + add_cost
-      self._rewards[self._step_counts] += add_PnL - .5 * kappa * add_PnL**2
-
-    return self._get_state(), self._rewards[self._step_counts], done, {}
+    done = self._step_counts == self._L if IS_HYPERPARAMETER_SEARCH else False
+    return self._get_state(), self._rewards[self._step_counts % self._L], done, {}
  
   def render(self, mode='human'):
     super(APTEnv, self).render()

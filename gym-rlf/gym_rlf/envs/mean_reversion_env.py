@@ -7,7 +7,8 @@ from gym import spaces
 from gym_rlf.envs.rlf_env import RLFEnv, action_space_normalizer, MAX_HOLDING, MIN_PRICE, MAX_PRICE
 from gym_rlf.envs.Parameters import TickSize, Lambda, sigma, kappa, p_e
 
-PENALTY_WEIGHT = 3
+IS_HYPERPARAMETER_SEARCH = True
+PENALTY_WEIGHT = 1000
 MAX_PENALTY = 5000
 
 def func_property(s1, s2, a1, a2):
@@ -17,7 +18,7 @@ def func_property(s1, s2, a1, a2):
 
 class MeanReversionEnv(RLFEnv):
   def __init__(self):
-    super(MeanReversionEnv, self).__init__(1000, 'mean_reversion_plots/')
+    super(MeanReversionEnv, self).__init__(100, 'mean_reversion_plots/')
 
     self.action_space = spaces.Box(low=-1, high=1, shape=(1,))
     # Use a Box to represent the observation space with the first param being (position)
@@ -42,7 +43,9 @@ class MeanReversionEnv(RLFEnv):
     return self._get_state()
 
   def _get_state(self):
-    return np.array([self._positions[self._step_counts], self._prices[self._step_counts]])
+    return np.array([
+      self._positions[self._step_counts % self._L],
+      self._prices[self._step_counts % self._L]])
     
   def _learn_func_property(self, func):
     if len(self._states) <= 1: return 0
@@ -54,26 +57,19 @@ class MeanReversionEnv(RLFEnv):
   def step(self, action):
     ac = round(action[0] * action_space_normalizer)
 
-    old_pos = self._positions[self._step_counts]
-    old_price = self._prices[self._step_counts]
+    old_pos = self._positions[self._step_counts % self._L]
+    old_price = self._prices[self._step_counts % self._L]
     self._step_counts += 1
-    new_pos = self._positions[self._step_counts] = max(min(old_pos + ac, MAX_HOLDING), -MAX_HOLDING)
-    new_price = self._prices[self._step_counts] = self._next_price(old_price)
+    new_pos = self._positions[self._step_counts % self._L] =\
+      max(min(old_pos + ac, MAX_HOLDING), -MAX_HOLDING)
+    new_price = self._prices[self._step_counts % self._L] = self._next_price(old_price)
 
     trade_size = abs(new_pos - old_pos)
     cost = TickSize * (trade_size + 1e-2 * trade_size**2)
     PnL = (new_price - old_price) * old_pos - cost
-    self._costs[self._step_counts] = cost
-    self._profits[self._step_counts] = PnL + cost
-    self._rewards[self._step_counts] = PnL - .5 * kappa * PnL**2
-
-    done = self._step_counts == self._L
-    if done: # liquidate the remaining new_pos shares of the security
-      add_cost = TickSize * (abs(new_pos) + 1e-2 * new_pos**2)
-      add_PnL = new_price * new_pos - add_cost
-      self._costs[self._step_counts] += add_cost
-      self._profits[self._step_counts] += add_PnL + add_cost
-      self._rewards[self._step_counts] += add_PnL - .5 * kappa * add_PnL**2
+    self._costs[self._step_counts % self._L] = cost
+    self._profits[self._step_counts % self._L] = PnL + cost
+    self._rewards[self._step_counts % self._L] = PnL - .5 * kappa * PnL**2
       
     # Incorporate function property.
     self._states.append(new_price)
@@ -81,9 +77,10 @@ class MeanReversionEnv(RLFEnv):
       self._actions.append(ac/old_pos)
     else:
       self._actions.append(ac)
-    self._rewards[self._step_counts] -= PENALTY_WEIGHT * self._learn_func_property(func_property)
 
-    return self._get_state(), self._rewards[self._step_counts], done, {}
+    done = self._step_counts == self._L if IS_HYPERPARAMETER_SEARCH else False
+    p_err = self._learn_func_property(func_property)
+    return self._get_state(), self._rewards[self._step_counts % self._L] - PENALTY_WEIGHT * p_err, done, {}
  
   def render(self, mode='human'):
     super(MeanReversionEnv, self).render()

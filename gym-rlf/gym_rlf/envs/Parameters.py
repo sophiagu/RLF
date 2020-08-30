@@ -3,7 +3,6 @@ import math
 TickSize = .1
 LotSize = 100
 OptionSize = 100
-T = 100
 M = 10 # max round lots for holding
 K = 5 # max round lots for each trading action
 H = 5 # mean reversion half life

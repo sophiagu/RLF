@@ -38,6 +38,7 @@ class RLFEnv(gym.Env):
     self._actions = []
 
   def get_sharpe_ratio(self):
+    # sharpe ratio of the annualized reward
     return 16 * np.mean(self._rewards) / np.std(self._rewards)
 
   def _get_state(self):
