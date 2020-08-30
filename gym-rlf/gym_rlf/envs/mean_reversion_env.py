@@ -8,6 +8,7 @@ from gym_rlf.envs.rlf_env import RLFEnv, action_space_normalizer, MAX_HOLDING, M
 from gym_rlf.envs.Parameters import TickSize, Lambda, sigma, kappa, p_e
 
 IS_HYPERPARAMETER_SEARCH = True
+L2_REGULARIZED_REWARD = True
 PENALTY_WEIGHT = 1000
 MAX_PENALTY = 5000
 
@@ -70,17 +71,17 @@ class MeanReversionEnv(RLFEnv):
     self._costs[self._step_counts % self._L] = cost
     self._profits[self._step_counts % self._L] = PnL + cost
     self._rewards[self._step_counts % self._L] = PnL - .5 * kappa * PnL**2
-      
-    # Incorporate function property.
-    self._states.append(new_price)
-    if abs(old_pos) > 0:
-      self._actions.append(ac/old_pos)
-    else:
-      self._actions.append(ac)
 
     done = self._step_counts == self._L if IS_HYPERPARAMETER_SEARCH else False
-    p_err = self._learn_func_property(func_property)
-    return self._get_state(), self._rewards[self._step_counts % self._L] - PENALTY_WEIGHT * p_err, done, {}
+    reward = self._rewards[self._step_counts % self._L]
+    if L2_REGULARIZED_REWARD: # incorporate function property
+      self._states.append(new_price)
+      if abs(old_pos) > 0:
+        self._actions.append(ac/old_pos)
+      else:
+        self._actions.append(ac)
+      reward -= PENALTY_WEIGHT * self._learn_func_property(func_property)
+    return self._get_state(), reward, done, {}
  
   def render(self, mode='human'):
     super(MeanReversionEnv, self).render()

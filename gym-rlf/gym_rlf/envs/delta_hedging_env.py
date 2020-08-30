@@ -6,12 +6,13 @@ import numpy as np
 
 from gym import spaces
 from gym_rlf.envs.rlf_env import RLFEnv, action_space_normalizer, MIN_PRICE, MAX_PRICE
-from gym_rlf.envs.Parameters import TickSize, OptionSize, T, S0, sigma_dh, kappa_dh
-
-PENALTY_WEIGHT = 1
-MAX_PENALTY = 10000
-
+from gym_rlf.envs.Parameters import TickSize, OptionSize, S0, sigma_dh, kappa_dh
 from scipy.stats import norm
+
+IS_HYPERPARAMETER_SEARCH = True
+L2_REGULARIZED_REWARD = True
+PENALTY_WEIGHT = .05
+MAX_PENALTY = 10
 
 def insertion_sort(states, actions):
   state, action = states[-1], actions[-1]
@@ -29,7 +30,7 @@ def insertion_sort(states, actions):
 def func_property(s0, s1, s2, a0, a1, a2):
   # Assume the state action pairs are sorted by s0 <= s1 <= s2.
   if s2 == s0: return 0
-  baseline_action = [(s2 - s1) * a0 + (s1 - s0) * a2] / (s2 - s0)
+  baseline_action = ((s2 - s1) * a0 + (s1 - s0) * a2) / (s2 - s0)
   if a1 >= baseline_action: return 0
   return min(MAX_PENALTY, (baseline_action - a2)**2)
     
@@ -47,14 +48,14 @@ def BSM_call_price_and_delta(K, tau, St, sigma):
 
 class DeltaHedgingEnv(RLFEnv):
   def __init__(self):
-    super(DeltaHedgingEnv, self).__init__(T, 'delta_hedging_plots/')
+    super(DeltaHedgingEnv, self).__init__(100, 'delta_hedging_plots/')
 
     self.action_space = spaces.Box(low=-1, high=1, shape=(1,))
     # Use a Box to represent the observation space with params:
     # (underlying position), (time to maturity), and (underlying price).
     self.observation_space = spaces.Box(
       low=np.array([-OptionSize, 0, MIN_PRICE]),
-      high=np.array([OptionSize, T, MAX_PRICE]),
+      high=np.array([OptionSize, self._L, MAX_PRICE]),
       shape=(3,))
 
   def _next_price(self):
@@ -74,7 +75,10 @@ class DeltaHedgingEnv(RLFEnv):
     return self._get_state()
 
   def _get_state(self):
-    return np.array([self._positions[self._step_counts], T - self._step_counts, self._prices[self._step_counts]])
+    return np.array([
+      self._positions[self._step_counts % self._L],
+      self._L - self._step_counts % self._L,
+      self._prices[self._step_counts % self._L]])
     
   def _learn_func_property(self, func):
     if len(self._states) <= 2: return 0
@@ -89,32 +93,33 @@ class DeltaHedgingEnv(RLFEnv):
   def step(self, action):
     ac = round(action[0] * action_space_normalizer)
 
-    old_pos = self._positions[self._step_counts]
-    old_price = self._prices[self._step_counts]
-    old_option_price = self._option_prices[self._step_counts]
+    old_pos = self._positions[self._step_counts % self._L]
+    old_price = self._prices[self._step_counts % self._L]
+    old_option_price = self._option_prices[self._step_counts % self._L]
     self._step_counts += 1
     done = self._step_counts == self._L
-    new_pos = self._positions[self._step_counts] = max(min(old_pos + ac, OptionSize), -OptionSize)
-    new_price = self._prices[self._step_counts] = self._next_price()
-    new_option_price = self._option_prices[self._step_counts] = old_option_price if done else\
-      BSM_call_price_and_delta(S0, T - self._step_counts, new_price, sigma_dh)[0]
+    new_pos = self._positions[self._step_counts % self._L] = max(min(old_pos + ac, OptionSize), -OptionSize)
+    new_price = self._prices[self._step_counts % self._L] = self._next_price()
+    new_option_price = self._option_prices[self._step_counts % self._L] = old_option_price if done else\
+      BSM_call_price_and_delta(S0,  self._L - self._step_counts % self._L, new_price, sigma_dh)[0]
 
     trade_size = abs(new_pos - old_pos)
     cost = TickSize * (trade_size + 1e-2 * trade_size**2)
     PnL = (new_price - old_price) * old_pos + (new_option_price - old_option_price) - cost
-    self._costs[self._step_counts] = cost
-    self._profits[self._step_counts] = PnL + cost
-    self._rewards[self._step_counts] = PnL - .5 * kappa_dh * PnL**2
-      
-    # Incorporate function property.
-    self._states.append(new_price)
-    if abs(old_pos) > 0:
-      self._actions.append(ac/old_pos)
-    else:
-      self._actions.append(ac)
-    self._rewards[self._step_counts] -= PENALTY_WEIGHT * self._learn_func_property(func_property)
+    self._costs[self._step_counts % self._L] = cost
+    self._profits[self._step_counts % self._L] = PnL + cost
+    self._rewards[self._step_counts % self._L] = PnL - .5 * kappa_dh * PnL**2
 
-    return self._get_state(), self._rewards[self._step_counts], done, {}
+    done = self._step_counts == self._L if IS_HYPERPARAMETER_SEARCH else False
+    reward = self._rewards[self._step_counts % self._L]
+    if L2_REGULARIZED_REWARD: # incorporate function property
+      self._states.append(new_price)
+      if abs(old_pos) > 0:
+        self._actions.append(ac/old_pos)
+      else:
+        self._actions.append(ac)
+      reward -= PENALTY_WEIGHT * self._learn_func_property(func_property)
+    return self._get_state(), self._rewards[self._step_counts % self._L], done, {}
  
   def render(self, mode='human'):
     super(DeltaHedgingEnv, self).render()
