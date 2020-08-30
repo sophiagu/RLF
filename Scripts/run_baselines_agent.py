@@ -40,7 +40,6 @@ def _train(env_id, model_params, total_steps, is_evaluation=False):
 def _search_hparams(env_id, total_steps, trial):
   envs, model = _train(env_id, ppo2_params(trial), total_steps, True)
   mean_reward, _ = evaluate_policy(model, envs, n_eval_episodes=2)
-  
   envs.close()
   # Negate the reward because Optuna minimizes lost.
   return -mean_reward
@@ -115,12 +114,12 @@ if __name__ == '__main__':
     print('best value achieved =', study.best_value)
     print('best trial =', study.best_trial)
   else:
-    # Evaluate the model every 10 x L timesteps.
+    # Evaluate the model every 100 x L timesteps.
     # Stop when the evaluation result drops by more than .15.
-    assert args.max_train_steps % (10 * L) == 0
+    assert args.max_train_steps % (100 * L) == 0
     best_sr = 0
-    for i in range(args.max_train_steps // (10 * L)):
-      envs, model = _train(env_id, study.best_params, 10 * L)
+    for i in range(args.max_train_steps // (100 * L)):
+      envs, model = _train(env_id, study.best_params, 100 * L)
       sharpe_ratio = _eval_model(model, env_id, L, envs.observation_space.shape, 12)
       if sharpe_ratio > best_sr:
         sharpe_ratio = best_sr
