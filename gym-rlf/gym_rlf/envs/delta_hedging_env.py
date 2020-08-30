@@ -119,7 +119,7 @@ class DeltaHedgingEnv(RLFEnv):
       else:
         self._actions.append(ac)
       reward -= PENALTY_WEIGHT * self._learn_func_property(func_property)
-    return self._get_state(), self._rewards[self._step_counts % self._L], done, {}
+    return self._get_state(), reward, done, {}
  
   def render(self, mode='human'):
     super(DeltaHedgingEnv, self).render()
