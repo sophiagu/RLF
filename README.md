@@ -1,6 +1,6 @@
 # RLF
 
-This repo provides a general framework for training RL agents for both `alpha-finding` and `hedging` strategies. I've written a few sample environments to help you get started.
+This repo uses *off-the-shelf* technologies (`gym` for constructing envs and `stable-baselines` for training agents) to provide a general framework for training DRL agents for both `alpha-finding` and `hedging` strategies. To help you get started, I've included a few sample environments.
 
 ### Folder descriptions
 All the sample environments are living under the folder `gym-rlf`. Right now we have the following environments:
