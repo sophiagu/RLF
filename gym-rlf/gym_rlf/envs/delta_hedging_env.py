@@ -9,8 +9,8 @@ from gym_rlf.envs.rlf_env import RLFEnv, action_space_normalizer, MIN_PRICE, MAX
 from gym_rlf.envs.Parameters import TickSize, OptionSize, S0, sigma_dh, kappa_dh
 from scipy.stats import norm
 
-IS_HYPERPARAMETER_SEARCH = True
 L2_REGULARIZED_REWARD = True
+IS_EPISODIC = True # this must be True if using l2 regularized reward
 PENALTY_WEIGHT = .05
 MAX_PENALTY = 10
 
@@ -48,7 +48,7 @@ def BSM_call_price_and_delta(K, tau, St, sigma):
 
 class DeltaHedgingEnv(RLFEnv):
   def __init__(self):
-    super(DeltaHedgingEnv, self).__init__(100, 'delta_hedging_plots/')
+    super(DeltaHedgingEnv, self).__init__('delta_hedging_plots/')
 
     self.action_space = spaces.Box(low=-1, high=1, shape=(1,))
     # Use a Box to represent the observation space with params:
@@ -110,7 +110,7 @@ class DeltaHedgingEnv(RLFEnv):
     self._profits[self._step_counts % self._L] = PnL + cost
     self._rewards[self._step_counts % self._L] = PnL - .5 * kappa_dh * PnL**2
 
-    done = self._step_counts == self._L if IS_HYPERPARAMETER_SEARCH else False
+    done = self._step_counts == self._L if IS_EPISODIC else False
     reward = self._rewards[self._step_counts % self._L]
     if L2_REGULARIZED_REWARD: # incorporate function property
       self._states.append(new_price)

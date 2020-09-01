@@ -7,12 +7,12 @@ from gym import spaces
 from gym_rlf.envs.rlf_env import RLFEnv, action_space_normalizer, MAX_HOLDING, MIN_PRICE, MAX_PRICE
 from gym_rlf.envs.Parameters import TickSize, sigma, kappa, alpha, factor_alpha, factor_sensitivity, factor_sigma, p_e
 
-IS_HYPERPARAMETER_SEARCH = True
+IS_EPISODIC = True
 
 
 class APTEnv(RLFEnv):
   def __init__(self):
-    super(APTEnv, self).__init__(100, 'apt_plots/')
+    super(APTEnv, self).__init__('apt_plots/')
 
     # Use a Box to represent the action space with the first param being
     # (trade of the security) and the second param being (trade of the factor security).
@@ -80,7 +80,7 @@ class APTEnv(RLFEnv):
     self._profits[self._step_counts % self._L] = PnL + cost
     self._rewards[self._step_counts % self._L] = PnL - .5 * kappa * PnL**2
 
-    done = self._step_counts == self._L if IS_HYPERPARAMETER_SEARCH else False
+    done = self._step_counts == self._L if IS_EPISODIC else False
     return self._get_state(), self._rewards[self._step_counts % self._L], done, {}
  
   def render(self, mode='human'):

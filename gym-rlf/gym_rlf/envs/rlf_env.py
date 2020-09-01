@@ -18,8 +18,8 @@ MAX_PRICE = round(TickSize * 1000, 2)
 class RLFEnv(gym.Env):
   metadata = {'render.modes': ['human']}
 
-  def __init__(self, episode_size, plot_folder_name=None):
-    self._L = episode_size
+  def __init__(self, plot_folder_name=None):
+    self._L = 1000 # number of time steps in each episode
     self._render_counts = 0
     self._folder_name = None
     if plot_folder_name is not None:

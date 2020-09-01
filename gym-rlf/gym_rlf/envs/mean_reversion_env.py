@@ -7,8 +7,8 @@ from gym import spaces
 from gym_rlf.envs.rlf_env import RLFEnv, action_space_normalizer, MAX_HOLDING, MIN_PRICE, MAX_PRICE
 from gym_rlf.envs.Parameters import TickSize, Lambda, sigma, kappa, p_e
 
-IS_HYPERPARAMETER_SEARCH = True
 L2_REGULARIZED_REWARD = True
+IS_EPISODIC = True # this must be True if using l2 regularized reward
 PENALTY_WEIGHT = 1000
 MAX_PENALTY = 5000
 
@@ -19,7 +19,7 @@ def func_property(s1, s2, a1, a2):
 
 class MeanReversionEnv(RLFEnv):
   def __init__(self):
-    super(MeanReversionEnv, self).__init__(100, 'mean_reversion_plots/')
+    super(MeanReversionEnv, self).__init__('mean_reversion_plots/')
 
     self.action_space = spaces.Box(low=-1, high=1, shape=(1,))
     # Use a Box to represent the observation space with the first param being (position)
@@ -72,7 +72,7 @@ class MeanReversionEnv(RLFEnv):
     self._profits[self._step_counts % self._L] = PnL + cost
     self._rewards[self._step_counts % self._L] = PnL - .5 * kappa * PnL**2
 
-    done = self._step_counts == self._L if IS_HYPERPARAMETER_SEARCH else False
+    done = self._step_counts == self._L if IS_EPISODIC else False
     reward = self._rewards[self._step_counts % self._L]
     if L2_REGULARIZED_REWARD: # incorporate function property
       self._states.append(new_price)
