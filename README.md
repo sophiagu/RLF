@@ -35,17 +35,8 @@ mkdir mean_reversion_plots
 ### Instructions to train and run the Baselines agents
 
 #### Example usage
-##### Optimize hyperparameters
-Set `IS_HYPERPARAMETER_SEARCH` in the env to `True`.\
-Run
 ```
 python3 run_baselines_agent.py --env=mean_reversion --optimize=true
-```
-##### Train the model
-Set `IS_HYPERPARAMETER_SEARCH` in the env to `False`.\
-Run
-```
-python3 run_baselines_agent.py --env=mean_reversion
 ```
 
 ### Troubleshoot
