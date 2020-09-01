@@ -32,14 +32,14 @@ def _train(env_id, model_params, total_steps, is_evaluation=False):
   if not is_evaluation and os.path.exists(env_id):
     model = PPO2.load(env_id)
   else:
-    model = PPO2(MlpLstmPolicy, envs, n_steps=1, nminibatches=1, verbose=1, **model_params)
+    model = PPO2(MlpLstmPolicy, envs, n_steps=8, nminibatches=1, verbose=1, **model_params)
 
   model.learn(total_timesteps=total_steps)
   return envs, model
   
 def _search_hparams(env_id, total_steps, trial):
   envs, model = _train(env_id, ppo2_params(trial), total_steps, True)
-  mean_reward, _ = evaluate_policy(model, envs, n_eval_episodes=2)
+  mean_reward, _ = evaluate_policy(model, envs, n_eval_episodes=10)
   envs.close()
   # Negate the reward because Optuna minimizes lost.
   return -mean_reward
@@ -64,7 +64,7 @@ def _eval_model(model, env_id, L, ob_shape, num_eps, plot=False):
   
   # Compute the average sharpe ratio after removing the highest and the lowest values.
   sharpe_ratios.sort()
-  return sum(sharpe_ratios[1:-2]) / len(sharpe_ratios[1:-2])
+  return sum(sharpe_ratios[1:-1]) / len(sharpe_ratios[1:-1])
   
 
 if __name__ == '__main__':
@@ -78,10 +78,10 @@ if __name__ == '__main__':
                       help='Number of trials to search for optimal hyperparameters.')
   parser.add_argument('--num_eps', type=int, default=10,
                       help='Number of episodes to run the final model after training.')
-  parser.add_argument('--evaluation_steps', type=int, default=250000,
+  parser.add_argument('--evaluation_steps', type=int, default=500000,
                       help=('Number of total timesteps that the model runs when evaluating hyperparameters.'
                             'This number must be a multiple of the environment episode size L.'))
-  parser.add_argument('--max_train_steps', type=int, default=1000000,
+  parser.add_argument('--max_train_steps', type=int, default=5000000,
                       help=('Max number of total timesteps that the model runs during training.'
                             'This number must be a multiple of the environment episode size L.'))
   args = parser.parse_args()
@@ -97,7 +97,7 @@ if __name__ == '__main__':
   else:
     raise NotImplementedError
 
-  L = 100
+  L = 1000
   study = optuna.create_study(
     study_name=study_name,
     storage='sqlite:///{}.db'.format(args.env),
@@ -113,27 +113,27 @@ if __name__ == '__main__':
     print('best hyperparamters found =', study.best_params)
     print('best value achieved =', study.best_value)
     print('best trial =', study.best_trial)
-  else:
-    # Evaluate the model every 100 x L timesteps.
-    # Stop when the evaluation result drops by more than .15.
-    assert args.max_train_steps % (100 * L) == 0
-    best_sr = 0
-    for i in range(args.max_train_steps // (100 * L)):
-      envs, model = _train(env_id, study.best_params, 100 * L)
-      sharpe_ratio = _eval_model(model, env_id, L, envs.observation_space.shape, 12)
-      if sharpe_ratio > best_sr:
-        sharpe_ratio = best_sr
-        model.save(args.env)
-      elif best_sr >= 1 and best_sr - sharpe_ratio >= .15:
-        print('Training stopped after {} episodes with sharpe ratio {}.'.format(i + 1, best_sr))
-        break
-    print('best average sharpe ratio =', best_sr)
-    if not os.path.exists(args.env):
-      print('Training finished without finding a good policy!')
-      model.save(args.env)
 
-    del model
-    model = PPO2.load(args.env)
-    sharpe_ratio = _eval_model(model, env_id, L, envs.observation_space.shape, args.num_eps, True)
-    print('average sharpe ratio =', sharpe_ratio)
-    envs.close()
+  # Evaluate the model every 100 x L timesteps.
+  # Stop when the evaluation result drops by more than .15.
+  assert args.max_train_steps % (100 * L) == 0
+  best_sr = 0
+  for i in range(args.max_train_steps // (100 * L)):
+    envs, model = _train(env_id, study.best_params, 100 * L)
+    sharpe_ratio = _eval_model(model, env_id, L, envs.observation_space.shape, 12)
+    if sharpe_ratio > best_sr:
+      sharpe_ratio = best_sr
+      model.save(args.env)
+    elif best_sr >= 1 and best_sr - sharpe_ratio >= .15:
+      print('Training stopped after {} episodes with sharpe ratio {}.'.format(i + 1, best_sr))
+      break
+  print('best average sharpe ratio =', best_sr)
+  if not os.path.exists(args.env):
+    print('Training finished without finding a good policy!')
+    model.save(args.env)
+
+  del model
+  model = PPO2.load(args.env)
+  sharpe_ratio = _eval_model(model, env_id, L, envs.observation_space.shape, args.num_eps, True)
+  print('average sharpe ratio =', sharpe_ratio)
+  envs.close()
