@@ -32,7 +32,9 @@ def _train(env_id, model_params, total_steps, is_evaluation=False):
   if not is_evaluation and os.path.exists(env_id):
     model = PPO2.load(env_id)
   else:
-    model = PPO2(MlpLstmPolicy, envs, n_steps=8, nminibatches=1, verbose=1, **model_params)
+    model = PPO2(MlpLstmPolicy, envs, n_steps=8, nminibatches=1,
+                 learning_rate=lambda f: f * .001, verbose=1,
+                 **model_params)
 
   model.learn(total_timesteps=total_steps)
   return envs, model
