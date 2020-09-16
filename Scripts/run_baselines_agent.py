@@ -20,6 +20,8 @@ from stable_baselines.common.vec_env.vec_normalize import VecNormalize
 from stable_baselines import PPO2
 
 NUM_CPU = multiprocessing.cpu_count()
+L = 1000
+MAX_PATIENCE = 10
 
 def _train(env_id, model_params, total_steps, is_evaluation=False):
   if is_evaluation: # evaluate_policy() must only take one environment
@@ -99,7 +101,6 @@ if __name__ == '__main__':
   else:
     raise NotImplementedError
 
-  L = 1000
   study = optuna.create_study(
     study_name=study_name,
     storage='sqlite:///{}.db'.format(args.env),
@@ -117,18 +118,22 @@ if __name__ == '__main__':
     print('best trial =', study.best_trial)
 
   # Evaluate the model every 100 x L timesteps.
-  # Stop when the evaluation result drops by more than .15.
+  # Stop when the evaluation result drops by MAX_PATIENCE number of times.
   assert args.max_train_steps % (100 * L) == 0
   best_sr = 0
+  patience_counter = 0
   for i in range(args.max_train_steps // (100 * L)):
     envs, model = _train(env_id, study.best_params, 100 * L)
-    sharpe_ratio = _eval_model(model, env_id, L, envs.observation_space.shape, 12)
+    sharpe_ratio = _eval_model(model, env_id, L, envs.observation_space.shape, 7)
     if sharpe_ratio > best_sr:
       sharpe_ratio = best_sr
+      patience_counter = 0
       model.save(args.env)
-    elif best_sr >= 1 and best_sr - sharpe_ratio >= .15:
-      print('Training stopped after {} episodes with sharpe ratio {}.'.format(i + 1, best_sr))
-      break
+    elif best_sr >= 1:
+      patience_counter += 1
+      if patience_counter > MAX_PATIENCE:
+        print('Training stopped after {} episodes with sharpe ratio {}.'.format(i + 1, best_sr))
+        break
   print('best average sharpe ratio =', best_sr)
   if not os.path.exists(args.env):
     print('Training finished without finding a good policy!')
