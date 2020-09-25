@@ -34,7 +34,7 @@ def _train(env_id, model_params, total_steps, is_evaluation=False):
   if not is_evaluation and os.path.exists(env_id):
     model = PPO2.load(env_id)
   else:
-    model = PPO2(MlpLstmPolicy, envs, n_steps=8, nminibatches=1,
+    model = PPO2(MlpLstmPolicy, envs, n_steps=1, nminibatches=1,
                  learning_rate=lambda f: f * .001, verbose=1,
                  policy_kwargs=dict(act_fun=tf.nn.relu, net_arch=None),
                  **model_params)
@@ -83,10 +83,10 @@ if __name__ == '__main__':
                       help='Number of trials to search for optimal hyperparameters.')
   parser.add_argument('--num_eps', type=int, default=10,
                       help='Number of episodes to run the final model after training.')
-  parser.add_argument('--evaluation_steps', type=int, default=500000,
+  parser.add_argument('--evaluation_steps', type=int, default=100000,
                       help=('Number of total timesteps that the model runs when evaluating hyperparameters.'
                             'This number must be a multiple of the environment episode size L.'))
-  parser.add_argument('--max_train_steps', type=int, default=5000000,
+  parser.add_argument('--max_train_steps', type=int, default=1000000,
                       help=('Max number of total timesteps that the model runs during training.'
                             'This number must be a multiple of the environment episode size L.'))
   args = parser.parse_args()
