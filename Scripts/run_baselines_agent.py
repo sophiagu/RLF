@@ -34,7 +34,7 @@ def _train(env_id, model_params, total_steps, is_evaluation=False):
   if not is_evaluation and os.path.exists(env_id):
     model = PPO2.load(env_id)
   else:
-    model = PPO2(MlpLstmPolicy, envs, n_steps=1, nminibatches=1,
+    model = PPO2(MlpLstmPolicy, envs, n_steps=8, nminibatches=1,
                  learning_rate=lambda f: f * .001, verbose=1,
                  policy_kwargs=dict(act_fun=tf.nn.relu, net_arch=None),
                  **model_params)
@@ -86,7 +86,7 @@ if __name__ == '__main__':
   parser.add_argument('--evaluation_steps', type=int, default=100000,
                       help=('Number of total timesteps that the model runs when evaluating hyperparameters.'
                             'This number must be a multiple of the environment episode size L.'))
-  parser.add_argument('--max_train_steps', type=int, default=1000000,
+  parser.add_argument('--max_train_steps', type=int, default=10000000,
                       help=('Max number of total timesteps that the model runs during training.'
                             'This number must be a multiple of the environment episode size L.'))
   args = parser.parse_args()
@@ -121,22 +121,23 @@ if __name__ == '__main__':
   # Evaluate the model every 100 x L timesteps.
   # Stop when the evaluation result drops by MAX_PATIENCE number of times.
   assert args.max_train_steps % (100 * L) == 0
-  best_sr = 0
+  best_sr = None
   patience_counter = 0
   for i in range(args.max_train_steps // (100 * L)):
     envs, model = _train(env_id, study.best_params, 100 * L)
     sharpe_ratio = _eval_model(model, env_id, L, envs.observation_space.shape, 7)
-    if sharpe_ratio > best_sr:
-      sharpe_ratio = best_sr
+    print('Epoch: {} | Sharpe Ratio: {}'.format((i + 1) * 100, sharpe_ratio))
+    if best_sr is None or sharpe_ratio > best_sr:
+      best_sr = sharpe_ratio
       patience_counter = 0
       model.save(args.env)
-    elif best_sr >= 1:
+    else:
       patience_counter += 1
       if patience_counter > MAX_PATIENCE:
-        print('Training stopped after {} episodes with sharpe ratio {}.'.format(i + 1, best_sr))
+        print('Training stopped after {} episodes with sharpe ratio {}.'.format((i + 1) * 100, best_sr))
         break
   print('best average sharpe ratio =', best_sr)
-  if not os.path.exists(args.env):
+  if best_sr is None or best_sr <= 0 or not os.path.exists(args.env):
     print('Training finished without finding a good policy!')
     model.save(args.env)
 
