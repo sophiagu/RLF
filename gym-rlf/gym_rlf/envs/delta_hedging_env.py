@@ -97,10 +97,9 @@ class DeltaHedgingEnv(RLFEnv):
     old_price = self._prices[self._step_counts % self._L]
     old_option_price = self._option_prices[self._step_counts % self._L]
     self._step_counts += 1
-    done = self._step_counts == self._L
     new_pos = self._positions[self._step_counts % self._L] = max(min(old_pos + ac, OptionSize), -OptionSize)
     new_price = self._prices[self._step_counts % self._L] = self._next_price()
-    new_option_price = self._option_prices[self._step_counts % self._L] = old_option_price if done else\
+    new_option_price = self._option_prices[self._step_counts % self._L] =\
       BSM_call_price_and_delta(S0,  self._L - self._step_counts % self._L, new_price, sigma_dh)[0]
 
     trade_size = abs(new_pos - old_pos)
