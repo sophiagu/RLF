@@ -30,7 +30,7 @@ def _train(env_id, model_params, total_steps, is_evaluation=False):
     envs = SubprocVecEnv([make_env(env_id) for _ in range(NUM_CPU)])
   envs = VecNormalize(envs) # normalize the envs during training and evaluation
 
-  model = PPO2(MlpLstmPolicy, envs, n_steps=8, nminibatches=1,
+  model = PPO2(MlpLstmPolicy, envs, n_steps=2, nminibatches=1,
                learning_rate=lambda f: f * 1.0e-5, verbose=1,
                policy_kwargs=dict(act_fun=tf.nn.relu, net_arch=None),
                **model_params)
@@ -82,7 +82,7 @@ if __name__ == '__main__':
   parser.add_argument('--evaluation_steps', type=int, default=100000,
                       help=('Number of total timesteps that the model runs when evaluating hyperparameters.'
                             'This number must be a multiple of the environment episode size L.'))
-  parser.add_argument('--max_train_steps', type=int, default=10000000,
+  parser.add_argument('--max_train_steps', type=int, default=5000000,
                       help=('Max number of total timesteps that the model runs during training.'
                             'This number must be a multiple of the environment episode size L.'))
   args = parser.parse_args()
