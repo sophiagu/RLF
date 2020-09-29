@@ -126,7 +126,7 @@ if __name__ == '__main__':
   for i in range(args.max_train_steps // (100 * L)):
     envs, model = _train(env_id, study.best_params, 100 * L)
     sharpe_ratio = _eval_model(model, env_id, L, envs.observation_space.shape, 7)
-    print('Epoch: {} | Sharpe Ratio: {}'.format((i + 1) * 100, sharpe_ratio))
+    print('Epoch: {} | Sharpe Ratio: {}'.format(i + 1, sharpe_ratio))
     model.save(args.env)
     if best_sr is None or sharpe_ratio > best_sr:
       best_sr = sharpe_ratio
