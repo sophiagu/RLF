@@ -21,7 +21,7 @@ from stable_baselines import PPO2
 
 NUM_CPU = multiprocessing.cpu_count()
 L = 1000
-MAX_PATIENCE = 10
+MAX_PATIENCE = 3
 
 def _train(env_id, model_params, total_steps, is_evaluation=False):
   if is_evaluation: # evaluate_policy() must only take one environment
@@ -30,14 +30,10 @@ def _train(env_id, model_params, total_steps, is_evaluation=False):
     envs = SubprocVecEnv([make_env(env_id) for _ in range(NUM_CPU)])
   envs = VecNormalize(envs) # normalize the envs during training and evaluation
 
-  # Load pretrained model during training.
-  if not is_evaluation and os.path.exists(env_id):
-    model = PPO2.load(env_id)
-  else:
-    model = PPO2(MlpLstmPolicy, envs, n_steps=8, nminibatches=1,
-                 learning_rate=lambda f: f * 1.0e-5, verbose=1,
-                 policy_kwargs=dict(act_fun=tf.nn.relu, net_arch=None),
-                 **model_params)
+  model = PPO2(MlpLstmPolicy, envs, n_steps=8, nminibatches=1,
+               learning_rate=lambda f: f * 1.0e-5, verbose=1,
+               policy_kwargs=dict(act_fun=tf.nn.relu, net_arch=None),
+               **model_params)
 
   model.learn(total_timesteps=total_steps)
   return envs, model
@@ -118,29 +114,31 @@ if __name__ == '__main__':
     print('best value achieved =', study.best_value)
     print('best trial =', study.best_trial)
 
-  # Evaluate the model every 100 x L timesteps.
+  # Evaluate the model every increment of 500 x L timesteps.
   # Stop when the evaluation result drops by MAX_PATIENCE number of times.
-  assert args.max_train_steps % (100 * L) == 0
+  assert args.max_train_steps % (500 * L) == 0
   best_sr = None
+  best_num_train_steps = None
   patience_counter = 0
-  for i in range(args.max_train_steps // (100 * L)):
-    envs, model = _train(env_id, study.best_params, 100 * L)
+  for i in range(2, args.max_train_steps // (500 * L) + 1):
+    envs, model = _train(env_id, study.best_params, i * (500 * L))
     sharpe_ratio = _eval_model(model, env_id, L, envs.observation_space.shape, 7)
-    print('Epoch: {} | Sharpe Ratio: {}'.format(i + 1, sharpe_ratio))
-    model.save(args.env)
     if best_sr is None or sharpe_ratio > best_sr:
       best_sr = sharpe_ratio
+      best_num_train_steps = i * (500 * L)
       patience_counter = 0
-      model.save('best_' + args.env)
+      model.save(args.env)
     else:
       patience_counter += 1
       if patience_counter > MAX_PATIENCE:
-        print('Training stopped after {} episodes with sharpe ratio {}.'.format(i + 1, best_sr))
+        print(
+          'Training stopped after {} timesteps with the best sharpe ratio {} and the best training steps {}.'
+          .format(i * (500 * L), best_sr, best_num_train_steps))
         break
   print('best average sharpe ratio =', best_sr)
 
   del model
-  model = PPO2.load('best_' + args.env)
+  model = PPO2.load(args.env)
   sharpe_ratio = _eval_model(model, env_id, L, envs.observation_space.shape, args.num_eps, True)
   print('average sharpe ratio =', sharpe_ratio)
   envs.close()
