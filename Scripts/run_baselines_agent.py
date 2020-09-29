@@ -135,7 +135,7 @@ if __name__ == '__main__':
     else:
       patience_counter += 1
       if patience_counter > MAX_PATIENCE:
-        print('Training stopped after {} episodes with sharpe ratio {}.'.format((i + 1) * 100, best_sr))
+        print('Training stopped after {} episodes with sharpe ratio {}.'.format(i + 1, best_sr))
         break
   print('best average sharpe ratio =', best_sr)
 
