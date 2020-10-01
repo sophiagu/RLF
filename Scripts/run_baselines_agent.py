@@ -14,7 +14,7 @@ import os
 from functools import partial
 from utils import make_env, ppo2_params
 from stable_baselines.common.evaluation import evaluate_policy
-from stable_baselines.common.policies import MlpLstmPolicy
+from stable_baselines.common.policies import ConvexPolicy, MlpLstmPolicy
 from stable_baselines.common.vec_env import SubprocVecEnv
 from stable_baselines.common.vec_env.vec_normalize import VecNormalize
 from stable_baselines import PPO2
@@ -22,24 +22,30 @@ from stable_baselines import PPO2
 NUM_CPU = multiprocessing.cpu_count()
 L = 1000
 MAX_PATIENCE = 3
+USE_CONVEX_NN = False
 
-def _train(env_id, model_params, total_steps, is_evaluation=False):
+def _train(env_id, model_params, total_steps, use_convex_nn=False, is_evaluation=False):
   if is_evaluation: # evaluate_policy() must only take one environment
     envs = SubprocVecEnv([make_env(env_id)])
   else:
     envs = SubprocVecEnv([make_env(env_id) for _ in range(NUM_CPU)])
   envs = VecNormalize(envs) # normalize the envs during training and evaluation
 
-  model = PPO2(MlpLstmPolicy, envs, n_steps=2, nminibatches=1,
-               learning_rate=lambda f: f * 1.0e-5, verbose=1,
-               policy_kwargs=dict(act_fun=tf.nn.relu, net_arch=None),
-               **model_params)
+  if use_convex_nn:
+    model = PPO2(ConvexPolicy, envs, n_steps=2, nminibatches=1,
+                 learning_rate=lambda f: f * 1.0e-5, verbose=1,
+                 **model_params)
+  else:
+    model = PPO2(MlpLstmPolicy, envs, n_steps=2, nminibatches=1,
+                 learning_rate=lambda f: f * 1.0e-5, verbose=1,
+                 policy_kwargs=dict(act_fun=tf.nn.relu, net_arch=None),
+                 **model_params)
 
   model.learn(total_timesteps=total_steps)
   return envs, model
   
 def _search_hparams(env_id, total_steps, trial):
-  envs, model = _train(env_id, ppo2_params(trial), total_steps, True)
+  envs, model = _train(env_id, ppo2_params(trial), total_steps, USE_CONVEX_NN, True)
   mean_reward, _ = evaluate_policy(model, envs, n_eval_episodes=10)
   envs.close()
   # Negate the reward because Optuna minimizes lost.
@@ -82,7 +88,7 @@ if __name__ == '__main__':
   parser.add_argument('--evaluation_steps', type=int, default=100000,
                       help=('Number of total timesteps that the model runs when evaluating hyperparameters.'
                             'This number must be a multiple of the environment episode size L.'))
-  parser.add_argument('--max_train_steps', type=int, default=5000000,
+  parser.add_argument('--max_train_steps', type=int, default=2000000,
                       help=('Max number of total timesteps that the model runs during training.'
                             'This number must be a multiple of the environment episode size L.'))
   args = parser.parse_args()
@@ -114,18 +120,18 @@ if __name__ == '__main__':
     print('best value achieved =', study.best_value)
     print('best trial =', study.best_trial)
 
-  # Evaluate the model every increment of 500 x L timesteps.
+  # Evaluate the model every increment of 200 x L timesteps.
   # Stop when the evaluation result drops by MAX_PATIENCE number of times.
-  assert args.max_train_steps % (500 * L) == 0
+  assert args.max_train_steps % (200 * L) == 0
   best_sr = None
   best_num_train_steps = None
   patience_counter = 0
-  for i in range(2, args.max_train_steps // (500 * L) + 1):
-    envs, model = _train(env_id, study.best_params, i * (500 * L))
+  for i in range(5, args.max_train_steps // (200 * L) + 1):
+    envs, model = _train(env_id, study.best_params, i * (200 * L), USE_CONVEX_NN)
     sharpe_ratio = _eval_model(model, env_id, L, envs.observation_space.shape, 7)
     if best_sr is None or sharpe_ratio > best_sr:
       best_sr = sharpe_ratio
-      best_num_train_steps = i * (500 * L)
+      best_num_train_steps = i * (200 * L)
       patience_counter = 0
       model.save(args.env)
     else:
@@ -133,7 +139,7 @@ if __name__ == '__main__':
       if patience_counter > MAX_PATIENCE:
         print(
           'Training stopped after {} timesteps with the best sharpe ratio {} and the best training steps {}.'
-          .format(i * (500 * L), best_sr, best_num_train_steps))
+          .format(i * (200 * L), best_sr, best_num_train_steps))
         break
   print('best average sharpe ratio =', best_sr)
 
