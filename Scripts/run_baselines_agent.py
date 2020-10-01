@@ -21,7 +21,7 @@ from stable_baselines import PPO2
 
 NUM_CPU = multiprocessing.cpu_count()
 L = 1000
-MAX_PATIENCE = 3
+MAX_PATIENCE = 4
 USE_CONVEX_NN = False
 
 def _train(env_id, model_params, total_steps, use_convex_nn=False, is_evaluation=False):
