@@ -38,6 +38,7 @@ mkdir mean_reversion_plots
 ```
 python3 run_baselines_agent.py --env=mean_reversion --optimize=true
 ```
+If you want to enforce the output of the policy network to be a convex function of an input, make sure that input in in the last dimension of the obersvation space, and set `USE_CONVEX_NN` to `True` in `run_baselines_agent.py` before running the script.
 
 ### Troubleshoot
 - `Check failed: PyBfloat16_Type.tp_base != nullptr`\
