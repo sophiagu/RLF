@@ -85,12 +85,12 @@ if __name__ == '__main__':
                       help='Number of trials to search for optimal hyperparameters.')
   parser.add_argument('--num_eps', type=int, default=10,
                       help='Number of episodes to run the final model after training.')
-  parser.add_argument('--evaluation_steps', type=int, default=100000,
-                      help=('Number of total timesteps that the model runs when evaluating hyperparameters.'
-                            'This number must be a multiple of the environment episode size L.'))
-  parser.add_argument('--max_train_steps', type=int, default=10000000,
-                      help=('Max number of total timesteps that the model runs during training.'
-                            'This number must be a multiple of the environment episode size L.'))
+  parser.add_argument('--evaluation_epoches', type=int, default=10,
+                      help='The length that the model runs when evaluating hyperparameters.')
+  parser.add_argument('--evaluate_model_per_epoches', type=int, default=1,
+                      help='How often should we evaluate the model during training.')
+  parser.add_argument('--max_train_epoches', type=int, default=10000,
+                      help='Max number of epoches that the model runs during training.')
   args = parser.parse_args()
   if args.env == 'mean_reversion':
     env_id = 'gym_rlf:MeanReversion-v0'
@@ -120,27 +120,29 @@ if __name__ == '__main__':
     print('best value achieved =', study.best_value)
     print('best trial =', study.best_trial)
 
-  # Evaluate the model every increment of 500 x L timesteps.
-  # Stop when the evaluation result drops by MAX_PATIENCE number of times.
-  assert args.max_train_steps % (500 * L) == 0
+  assert args.max_train_epoches % args.evaluate_model_per_epoches == 0
   best_sr = None
-  best_num_train_steps = None
+  best_train_epoches = None
   patience_counter = 0
-  for i in range(2, args.max_train_steps // (500 * L) + 1):
-    envs, model = _train(env_id, study.best_params, i * (500 * L), USE_CONVEX_NN)
+  for i in range(1, args.max_train_epoches // args.evaluate_model_per_epoches + 1):
+    envs, model = _train(env_id, study.best_params, i * (args.evaluate_model_per_epoches * L), USE_CONVEX_NN)
     sharpe_ratio = _eval_model(model, env_id, L, envs.observation_space.shape, 7)
     if best_sr is None or sharpe_ratio > best_sr:
       best_sr = sharpe_ratio
-      best_num_train_steps = i * (500 * L)
+      best_train_epoches = i * args.evaluate_model_per_epoches
       patience_counter = 0
       model.save(args.env)
     else:
       patience_counter += 1
       if patience_counter > MAX_PATIENCE:
         print(
-          'Training stopped after {} timesteps with the best sharpe ratio {} and the best training steps {}.'
-          .format(i * (500 * L), best_sr, best_num_train_steps))
+          'Training stopped after {} epoches with the best sharpe ratio {} and the best training epoches {}.'
+          .format(i * args.evaluate_model_per_epoches, best_sr, best_train_epoches))
         break
+  if i > args.max_train_epoches // args.evaluate_model_per_epoches:
+    print(
+      'Training stopped with the best sharpe ratio {} and the best training epoches {}.'
+      .format(best_sr, best_train_epoches))
   print('best average sharpe ratio =', best_sr)
 
   del model
