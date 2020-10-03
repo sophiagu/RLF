@@ -38,8 +38,7 @@ def _train(env_id, model_params, total_steps, use_convex_nn=False, is_evaluation
   else:
     model = PPO2(MlpLstmPolicy, envs, n_steps=2, nminibatches=1,
                  learning_rate=lambda f: f * 1.0e-5, verbose=1,
-                 policy_kwargs=dict(act_fun=tf.nn.relu,
-                                    net_arch=[dict(pi=[64, 64, 64], vf=[64, 64, 64])]),
+                 policy_kwargs=dict(act_fun=tf.nn.relu, net_arch=None),
                  **model_params)
 
   model.learn(total_timesteps=total_steps)
