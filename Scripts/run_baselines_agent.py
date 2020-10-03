@@ -38,7 +38,8 @@ def _train(env_id, model_params, total_steps, use_convex_nn=False, is_evaluation
   else:
     model = PPO2(MlpLstmPolicy, envs, n_steps=2, nminibatches=1,
                  learning_rate=lambda f: f * 1.0e-5, verbose=1,
-                 policy_kwargs=dict(act_fun=tf.nn.relu, net_arch=None),
+                 policy_kwargs=dict(act_fun=tf.nn.relu,
+                                    net_arch=[dict(pi=[64, 64, 64], vf=[64, 64, 64])]),
                  **model_params)
 
   model.learn(total_timesteps=total_steps)
@@ -88,7 +89,7 @@ if __name__ == '__main__':
   parser.add_argument('--evaluation_steps', type=int, default=100000,
                       help=('Number of total timesteps that the model runs when evaluating hyperparameters.'
                             'This number must be a multiple of the environment episode size L.'))
-  parser.add_argument('--max_train_steps', type=int, default=2000000,
+  parser.add_argument('--max_train_steps', type=int, default=10000000,
                       help=('Max number of total timesteps that the model runs during training.'
                             'This number must be a multiple of the environment episode size L.'))
   args = parser.parse_args()
@@ -120,18 +121,18 @@ if __name__ == '__main__':
     print('best value achieved =', study.best_value)
     print('best trial =', study.best_trial)
 
-  # Evaluate the model every increment of 200 x L timesteps.
+  # Evaluate the model every increment of 500 x L timesteps.
   # Stop when the evaluation result drops by MAX_PATIENCE number of times.
-  assert args.max_train_steps % (200 * L) == 0
+  assert args.max_train_steps % (500 * L) == 0
   best_sr = None
   best_num_train_steps = None
   patience_counter = 0
-  for i in range(5, args.max_train_steps // (200 * L) + 1):
-    envs, model = _train(env_id, study.best_params, i * (200 * L), USE_CONVEX_NN)
+  for i in range(2, args.max_train_steps // (500 * L) + 1):
+    envs, model = _train(env_id, study.best_params, i * (500 * L), USE_CONVEX_NN)
     sharpe_ratio = _eval_model(model, env_id, L, envs.observation_space.shape, 7)
     if best_sr is None or sharpe_ratio > best_sr:
       best_sr = sharpe_ratio
-      best_num_train_steps = i * (200 * L)
+      best_num_train_steps = i * (500 * L)
       patience_counter = 0
       model.save(args.env)
     else:
@@ -139,7 +140,7 @@ if __name__ == '__main__':
       if patience_counter > MAX_PATIENCE:
         print(
           'Training stopped after {} timesteps with the best sharpe ratio {} and the best training steps {}.'
-          .format(i * (200 * L), best_sr, best_num_train_steps))
+          .format(i * (500 * L), best_sr, best_num_train_steps))
         break
   print('best average sharpe ratio =', best_sr)
 
