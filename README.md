@@ -8,8 +8,8 @@ All the sample environments are living under the folder `gym-rlf`. Right now we 
 - `APTEnv`: A custom env for a single factor Arbitrage Pricing Theorem model.
 - `DeltaHedgingEnv`: A custome env for delta hedging a European Call option with fixed strike and expiration.
 
-The folder `Scripts` contains:
-- `run_baselines_agent.py`: It implements `PPO2` from `stable-baselines`. I chose `PPO2` because it combines ideas from both `A2C` and `TRPO`. More importantly, it supports continuous action/observation space, recurrent policy, and multi processing, which are desired properties for the common problems in trading.
+The DRL agent lives the folder `Scripts`:
+- `run_baselines_agent.py`: It implements the `PPO2` algorithm from `stable-baselines`. I chose `PPO2` because it combines ideas from both `A2C` and `TRPO`. More importantly, it supports continuous action/observation space, recurrent policy, and multi processing, which are desired properties for the common problems in trading.
 
 ### Prerequisites
 ```
