@@ -44,10 +44,10 @@ class RLFEnv(gym.Env):
     raise NotImplementedError
 
   def _learn_func_property(self):
-    # Returns a fraction of the number of states that violate a function property.
-    # The value is always between 0 and 1.
+    # Returns the fraction of the number of states that violate a function property.
+    # The return value is always between 0 and 1.
     pass
-    
+
   def step(self, action):
     raise NotImplementedError
 
