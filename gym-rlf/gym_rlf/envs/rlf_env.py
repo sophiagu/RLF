@@ -12,9 +12,9 @@ action_space_normalizer = LotSize * K
 
 MAX_HOLDING = LotSize * M
 MIN_PRICE = round(TickSize, 2) # strictly positive price
-MAX_PRICE = round(TickSize * 1000, 2)
-  
-  
+MAX_PRICE = round(TickSize * 10000, 2)
+
+
 class RLFEnv(gym.Env):
   metadata = {'render.modes': ['human']}
 
@@ -27,24 +27,25 @@ class RLFEnv(gym.Env):
       self._folder_name = plot_folder_name + next(tempfile._get_candidate_names())
 
   def reset(self):
-    self._step_counts = 0
-    self._prices = np.zeros(self._L+1)
-    self._prices[0] = p_e
-    self._positions = np.zeros(self._L+1)
-    self._rewards = np.zeros(self._L+1)
-    self._profits = np.zeros(self._L+1)
-    self._costs = np.zeros(self._L+1)
+    self._step_counts = 1
+    self._prices = np.zeros(self._L)
+    self._prices[0] = self._prices[1] = p_e
+    self._positions = np.zeros(self._L)
+    self._pnls = np.zeros(self._L)
+    self._costs = np.zeros(self._L)
     self._states = []
     self._actions = []
 
   def get_sharpe_ratio(self):
-    # sharpe ratio of the annualized reward
-    return 16 * np.mean(self._rewards) / np.std(self._rewards)
+    # sharpe ratio of the annualized PnL
+    return 16 * np.mean(self._pnls) / np.std(self._pnls)
 
   def _get_state(self):
     raise NotImplementedError
 
-  def _learn_func_property(self, func):
+  def _learn_func_property(self):
+    # Returns a fraction of the number of states that violate a function property.
+    # The value is always between 0 and 1.
     pass
     
   def step(self, action):

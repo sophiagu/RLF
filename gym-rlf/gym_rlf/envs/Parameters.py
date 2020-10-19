@@ -1,6 +1,6 @@
 import math
 
-TickSize = .1
+TickSize = .01 # change it to .1 for illiquid stocks
 LotSize = 100
 OptionSize = 100
 M = 10 # max round lots for holding
