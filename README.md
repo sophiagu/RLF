@@ -25,7 +25,7 @@ Follow instructions in [stable-baselines-tf2](https://github.com/sophiagu/stable
 **NOTE:**
 - Before running the script, `cd` into `gym-rlf/` and register the envs:
 ```
-pip install -e .
+python3 -m pip install -e .
 ```
 - And `cd` into `Scripts/` to make a folder (`folder name` = `env_id` + '_plots') for saving the plots (*e.g.* for mean_reversion):
 ```
