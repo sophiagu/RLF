@@ -14,44 +14,51 @@ import os
 from functools import partial
 from utils import make_env, ppo2_params
 from stable_baselines.common.evaluation import evaluate_policy
-from stable_baselines.common.policies import ConvexPolicy, MlpLstmPolicy
+from stable_baselines.common.policies import MlpPolicy, SigmoidMlpPolicy
 from stable_baselines.common.vec_env import SubprocVecEnv
 from stable_baselines.common.vec_env.vec_normalize import VecNormalize
 from stable_baselines import PPO2
 
 NUM_CPU = multiprocessing.cpu_count()
 L = 1000
+LR = .1
+LR_DECAY_RATE = 1 - 1e-5
 MAX_PATIENCE = 4
-USE_CONVEX_NN = False
 
-def _train(env_id, model_params, total_steps, use_convex_nn=False, is_evaluation=False):
+def _train(env_id, model_params, total_epoches, use_sigmoid_layer=False, is_evaluation=False):
   if is_evaluation: # evaluate_policy() must only take one environment
     envs = SubprocVecEnv([make_env(env_id)])
   else:
     envs = SubprocVecEnv([make_env(env_id) for _ in range(NUM_CPU)])
   envs = VecNormalize(envs) # normalize the envs during training and evaluation
 
-  if use_convex_nn:
-    model = PPO2(ConvexPolicy, envs, n_steps=2, nminibatches=1,
-                 learning_rate=lambda f: f * 1.0e-5, verbose=1,
+  total_steps = total_epoches * L
+  # learning rate is a function of f = num remaining steps / num total steps
+  # -> num steps run (excluding the current step) = num total steps * (1-f) - 1
+  learning_rate_fn = lambda f: LR * LR_DECAY_RATE**(total_steps * (1-f) - 1)
+
+  if use_sigmoid_layer:
+    model = PPO2(SigmoidMlpPolicy, envs, n_steps=1, nminibatches=1,
+                 learning_rate=learning_rate_fn, verbose=1,
+                 policy_kwargs=dict(act_fun=tf.nn.sigmoid),
                  **model_params)
   else:
-    model = PPO2(MlpLstmPolicy, envs, n_steps=2, nminibatches=1,
-                 learning_rate=lambda f: f * 1.0e-5, verbose=1,
-                 policy_kwargs=dict(act_fun=tf.nn.relu, net_arch=None),
+    model = PPO2(MlpPolicy, envs, n_steps=1, nminibatches=1,
+                 learning_rate=learning_rate_fn, verbose=1,
+                 policy_kwargs=dict(act_fun=tf.nn.sigmoid),
                  **model_params)
 
   model.learn(total_timesteps=total_steps)
   return envs, model
   
-def _search_hparams(env_id, total_steps, trial):
-  envs, model = _train(env_id, ppo2_params(trial), total_steps, USE_CONVEX_NN, True)
+def _search_hparams(env_id, total_epoches, use_sigmoid_layer, trial):
+  envs, model = _train(env_id, ppo2_params(trial), total_epoches, use_sigmoid_layer, True)
   mean_reward, _ = evaluate_policy(model, envs, n_eval_episodes=10)
   envs.close()
   # Negate the reward because Optuna minimizes lost.
   return -mean_reward
 
-def _eval_model(model, env_id, L, ob_shape, num_eps, plot=False):
+def _eval_model(model, env_id, ob_shape, num_eps, plot=False):
   if num_eps <= 2:
     raise AssertionError('num_eps must be greater than two')
 
@@ -79,19 +86,23 @@ if __name__ == '__main__':
 
   parser = argparse.ArgumentParser()
   parser.add_argument('--env', type=str)
+  parser.add_argument('--use_sigmoid_layer', type=bool, default=False,
+                      help='Whether or not to use SigmoidMlpPolicy. Drop this flag to use MlpPolicy.')
   parser.add_argument('--optimize', type=bool, default=False,
                       help='Search for optimal hyperparameters. Drop this flag to run the actual training.')
   parser.add_argument('--num_trials', type=int, default=100,
                       help='Number of trials to search for optimal hyperparameters.')
-  parser.add_argument('--num_eps', type=int, default=10,
-                      help='Number of episodes to run the final model after training.')
   parser.add_argument('--evaluation_epoches', type=int, default=10,
                       help='The length that the model runs when evaluating hyperparameters.')
   parser.add_argument('--evaluate_model_per_epoches', type=int, default=1,
                       help='How often should we evaluate the model during training.')
   parser.add_argument('--max_train_epoches', type=int, default=10000,
                       help='Max number of epoches that the model runs during training.')
+  parser.add_argument('--num_eps', type=int, default=10,
+                      help='Number of episodes to run the final model after training.')
   args = parser.parse_args()
+
+  ######## Setup ########
   if args.env == 'mean_reversion':
     env_id = 'gym_rlf:MeanReversion-v0'
     study_name = 'mean-reversion-study'
@@ -109,27 +120,35 @@ if __name__ == '__main__':
     storage='sqlite:///{}.db'.format(args.env),
     load_if_exists=True)
 
+  ######## Search for hyperparameters ########
   if args.optimize:
     study.optimize(
-      partial(_search_hparams, env_id, args.evaluation_steps),
+      partial(_search_hparams, env_id, args.evaluation_epoches, args.use_sigmoid_layer),
       n_trials=args.num_trials,
       n_jobs=NUM_CPU)
-    # df = study.trials_dataframe(attrs=('number', 'value', 'params', 'state'))
-    # print(df)
+    df = study.trials_dataframe(attrs=('number', 'value', 'params', 'state'))
+    num_rows = len(df.index)
+    print(df.tail(min(10, num_rows)))
     print('best hyperparamters found =', study.best_params)
     print('best value achieved =', study.best_value)
     print('best trial =', study.best_trial)
 
+  ######## Training ########
   assert args.max_train_epoches % args.evaluate_model_per_epoches == 0
   best_sr = None
   best_train_epoches = None
   patience_counter = 0
   for i in range(1, args.max_train_epoches // args.evaluate_model_per_epoches + 1):
-    envs, model = _train(env_id, study.best_params, i * (args.evaluate_model_per_epoches * L), USE_CONVEX_NN)
-    sharpe_ratio = _eval_model(model, env_id, L, envs.observation_space.shape, 7)
+    envs, model = _train(
+      env_id,
+      study.best_params,
+      args.evaluate_model_per_epoches * i,
+      args.use_sigmoid_layer)
+
+    sharpe_ratio = _eval_model(model, env_id, envs.observation_space.shape, 7)
     if best_sr is None or sharpe_ratio > best_sr:
       best_sr = sharpe_ratio
-      best_train_epoches = i * args.evaluate_model_per_epoches
+      best_train_epoches = args.evaluate_model_per_epoches * i
       patience_counter = 0
       model.save(args.env)
     else:
@@ -137,16 +156,16 @@ if __name__ == '__main__':
       if patience_counter > MAX_PATIENCE:
         print(
           'Training stopped after {} epoches with the best sharpe ratio {} and the best training epoches {}.'
-          .format(i * args.evaluate_model_per_epoches, best_sr, best_train_epoches))
+          .format(args.evaluate_model_per_epoches * i, best_sr, best_train_epoches))
         break
   if i > args.max_train_epoches // args.evaluate_model_per_epoches:
     print(
-      'Training stopped with the best sharpe ratio {} and the best training epoches {}.'
+      'Training stopped with the best sharpe ratio {} and the best training epoches {} after reaching max_train_epoches.'
       .format(best_sr, best_train_epoches))
-  print('best average sharpe ratio =', best_sr)
 
+  ######## Testing ########
   del model
   model = PPO2.load(args.env)
-  sharpe_ratio = _eval_model(model, env_id, L, envs.observation_space.shape, args.num_eps, True)
+  sharpe_ratio = _eval_model(model, env_id, envs.observation_space.shape, args.num_eps, True)
   print('average sharpe ratio =', sharpe_ratio)
   envs.close()
