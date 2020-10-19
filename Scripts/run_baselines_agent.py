@@ -92,9 +92,9 @@ if __name__ == '__main__':
                       help='Search for optimal hyperparameters. Drop this flag to run the actual training.')
   parser.add_argument('--num_trials', type=int, default=100,
                       help='Number of trials to search for optimal hyperparameters.')
-  parser.add_argument('--evaluation_epoches', type=int, default=10,
+  parser.add_argument('--evaluation_epoches', type=int, default=100,
                       help='The length that the model runs when evaluating hyperparameters.')
-  parser.add_argument('--evaluate_model_per_epoches', type=int, default=1,
+  parser.add_argument('--evaluate_model_per_epoches', type=int, default=100,
                       help='How often should we evaluate the model during training.')
   parser.add_argument('--max_train_epoches', type=int, default=10000,
                       help='Max number of epoches that the model runs during training.')
