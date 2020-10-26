@@ -14,15 +14,13 @@ import os
 from functools import partial
 from utils import make_env, ppo2_params
 from stable_baselines.common.evaluation import evaluate_policy
-from stable_baselines.common.policies import MlpPolicy, SigmoidMlpPolicy
+from stable_baselines.common.policies import MlpPolicy, MlpLstmPolicy, SigmoidMlpPolicy
 from stable_baselines.common.vec_env import SubprocVecEnv
 from stable_baselines.common.vec_env.vec_normalize import VecNormalize
 from stable_baselines import PPO2
 
 NUM_CPU = multiprocessing.cpu_count()
 L = 1000
-LR = .1
-LR_DECAY_RATE = 1 - 1e-5
 MAX_PATIENCE = 4
 
 def _train(env_id, model_params, total_epochs, use_sigmoid_layer=False, is_evaluation=False):
@@ -33,19 +31,15 @@ def _train(env_id, model_params, total_epochs, use_sigmoid_layer=False, is_evalu
   envs = VecNormalize(envs) # normalize the envs during training and evaluation
 
   total_steps = total_epochs * L
-  # learning rate is a function of f = num remaining steps / num total steps
-  # -> num steps run (excluding the current step) = num total steps * (1-f) - 1
-  learning_rate_fn = lambda f: LR * LR_DECAY_RATE**(total_steps * (1-f) - 1)
-
   if use_sigmoid_layer:
     model = PPO2(SigmoidMlpPolicy, envs, n_steps=1, nminibatches=1,
-                 learning_rate=learning_rate_fn, verbose=1,
-                 policy_kwargs=dict(act_fun=tf.nn.sigmoid),
+                 learning_rate=lambda f: f * 1e-5, verbose=1,
+                 policy_kwargs=dict(act_fun=tf.nn.relu),
                  **model_params)
   else:
-    model = PPO2(MlpPolicy, envs, n_steps=1, nminibatches=1,
-                 learning_rate=learning_rate_fn, verbose=1,
-                 policy_kwargs=dict(act_fun=tf.nn.sigmoid),
+    model = PPO2(MlpLstmPolicy, envs, n_steps=1, nminibatches=1,
+                 learning_rate=lambda f: f * 1e-5, verbose=1,
+                 policy_kwargs=dict(act_fun=tf.nn.relu),
                  **model_params)
 
   model.learn(total_timesteps=total_steps)
@@ -59,9 +53,6 @@ def _search_hparams(env_id, total_epochs, use_sigmoid_layer, trial):
   return -mean_reward
 
 def _eval_model(model, env_id, ob_shape, num_eps, plot=False):
-  if num_eps <= 2:
-    raise AssertionError('num_eps must be greater than two')
-
   test_env = SubprocVecEnv([make_env(env_id)])
   sharpe_ratios = []
   for episode in range(num_eps):
@@ -76,9 +67,8 @@ def _eval_model(model, env_id, ob_shape, num_eps, plot=False):
     if plot: test_env.env_method('render', indices=0)
   test_env.close()
   
-  # Compute the average sharpe ratio after removing the highest and the lowest values.
-  sharpe_ratios.sort()
-  return sum(sharpe_ratios[1:-1]) / len(sharpe_ratios[1:-1])
+  # Return the average sharpe ratio
+  return sum(sharpe_ratios) / len(sharpe_ratios)
   
 
 if __name__ == '__main__':
@@ -98,6 +88,8 @@ if __name__ == '__main__':
                       help='How often should we evaluate the model during training.')
   parser.add_argument('--max_train_epochs', type=int, default=10000,
                       help='Max number of epochs that the model runs during training.')
+  parser.add_argument('--num_random_initializations', type=int, default=10,
+                      help='Number of trials for different initializations of weights.')
   parser.add_argument('--num_eps', type=int, default=10,
                       help='Number of episodes to run the final model after training.')
   args = parser.parse_args()
@@ -128,44 +120,44 @@ if __name__ == '__main__':
       n_jobs=NUM_CPU)
     df = study.trials_dataframe(attrs=('number', 'value', 'params', 'state'))
     num_rows = len(df.index)
-    print(df.tail(min(10, num_rows)))
+    print(df.tail(min(args.num_trials, num_rows)))
     print('best hyperparamters found =', study.best_params)
-    print('best value achieved =', study.best_value)
+    print('best value achieved =', -study.best_value)
     print('best trial =', study.best_trial)
 
   ######## Training ########
   assert args.max_train_epochs % args.evaluate_model_per_epochs == 0
   best_sr = None
   best_train_epochs = None
-  patience_counter = 0
-  for i in range(1, args.max_train_epochs // args.evaluate_model_per_epochs + 1):
-    envs, model = _train(
-      env_id,
-      study.best_params,
-      args.evaluate_model_per_epochs * i,
-      args.use_sigmoid_layer)
+  
+  for _ in range(args.num_random_initializations):
+    patience_counter = 0
+    for i in range(1, args.max_train_epochs // args.evaluate_model_per_epochs + 1):
+      envs, model = _train(
+        env_id,
+        study.best_params,
+        args.evaluate_model_per_epochs * i,
+        args.use_sigmoid_layer)
 
-    sharpe_ratio = _eval_model(model, env_id, envs.observation_space.shape, 7)
-    if best_sr is None or sharpe_ratio > best_sr:
-      best_sr = sharpe_ratio
-      best_train_epochs = args.evaluate_model_per_epochs * i
-      patience_counter = 0
-      model.save(args.env)
-    else:
-      patience_counter += 1
-      if patience_counter > MAX_PATIENCE:
-        print(
-          'Training stopped after {} epochs with the best sharpe ratio {} and the best training epochs {}.'
-          .format(args.evaluate_model_per_epochs * i, best_sr, best_train_epochs))
-        break
-  if i > args.max_train_epochs // args.evaluate_model_per_epochs:
-    print(
-      'Training stopped with the best sharpe ratio {} and the best training epochs {} after reaching max_train_epochs.'
-      .format(best_sr, best_train_epochs))
+      sharpe_ratio = _eval_model(model, env_id, envs.observation_space.shape, 7)
+      if best_sr is None or sharpe_ratio > best_sr:
+        best_sr = sharpe_ratio
+        best_train_epochs = args.evaluate_model_per_epochs * i
+        patience_counter = 0
+        model.save(args.env)
+      else:
+        patience_counter += 1
+        if patience_counter > MAX_PATIENCE:
+          break
+
+  print(
+    'Training stopped with the best sharpe ratio {} and the best training epochs {} after reaching max_train_epochs.'
+    .format(best_sr, best_train_epochs))
+  del model
 
   ######## Testing ########
-  del model
   model = PPO2.load(args.env)
   sharpe_ratio = _eval_model(model, env_id, envs.observation_space.shape, args.num_eps, True)
   print('average sharpe ratio =', sharpe_ratio)
+  print('hyperparamters used =', study.best_params)
   envs.close()
