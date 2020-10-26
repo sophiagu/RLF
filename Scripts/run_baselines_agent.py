@@ -146,10 +146,9 @@ if __name__ == '__main__':
         model.save(args.env)
       else:
         patience_counter += 1
-        if patience_counter > MAX_PATIENCE:
-          break
+        if patience_counter > MAX_PATIENCE: break
 
-  print('best training sharpe ratio={}; best training epochs={}'.format(best_sr, best_train_epochs))
+  print('best average training sharpe ratio={}; best training epochs={}'.format(best_sr, best_train_epochs))
   del model
 
   ######## Testing ########
