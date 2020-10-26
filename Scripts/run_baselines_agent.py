@@ -156,6 +156,6 @@ if __name__ == '__main__':
   ######## Testing ########
   model = PPO2.load(args.env)
   sharpe_ratio = _eval_model(model, env_id, envs.observation_space.shape, args.num_eps, True)
-  print('average sharpe ratio =', sharpe_ratio)
-  print('hyperparamters used =', study.best_params)
+  print('average test sharpe ratio={}'.format(sharpe_ratio))
+  print('hyperparamters used={}'.format(study.best_params))
   envs.close()
