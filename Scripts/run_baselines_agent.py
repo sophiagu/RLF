@@ -138,7 +138,7 @@ if __name__ == '__main__':
         args.evaluate_model_per_epochs * i,
         args.use_sigmoid_layer)
 
-      sharpe_ratio = _eval_model(model, env_id, envs.observation_space.shape, 7)
+      sharpe_ratio = _eval_model(model, env_id, envs.observation_space.shape, 10)
       if best_sr is None or sharpe_ratio > best_sr:
         best_sr = sharpe_ratio
         best_train_epochs = args.evaluate_model_per_epochs * i
