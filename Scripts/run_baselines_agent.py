@@ -150,9 +150,7 @@ if __name__ == '__main__':
         if patience_counter > MAX_PATIENCE:
           break
 
-  print(
-    'Training stopped with the best sharpe ratio {} and the best training epochs {} after reaching max_train_epochs.'
-    .format(best_sr, best_train_epochs))
+  print('best training sharpe ratio={}; best training epochs={}'.format(best_sr, best_train_epochs))
   del model
 
   ######## Testing ########
