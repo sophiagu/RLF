@@ -30,7 +30,6 @@ def _train(env_id, model_params, total_epochs, use_sigmoid_layer=False, is_evalu
     envs = SubprocVecEnv([make_env(env_id) for _ in range(NUM_CPU)])
   envs = VecNormalize(envs) # normalize the envs during training and evaluation
 
-  total_steps = total_epochs * L
   if use_sigmoid_layer:
     model = PPO2(SigmoidMlpPolicy, envs, n_steps=1, nminibatches=1,
                  learning_rate=lambda f: f * 1e-5, verbose=1,
@@ -42,7 +41,7 @@ def _train(env_id, model_params, total_epochs, use_sigmoid_layer=False, is_evalu
                  policy_kwargs=dict(act_fun=tf.nn.relu),
                  **model_params)
 
-  model.learn(total_timesteps=total_steps)
+  model.learn(total_timesteps=total_epochs * L)
   return envs, model
   
 def _search_hparams(env_id, total_epochs, use_sigmoid_layer, trial):
