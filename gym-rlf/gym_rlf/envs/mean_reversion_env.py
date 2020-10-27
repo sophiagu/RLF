@@ -5,9 +5,15 @@ import numpy as np
 
 from gym import spaces
 from gym_rlf.envs.fn_properties import monotonic_decreasing
-from gym_rlf.envs.rlf_env import RLFEnv, action_space_normalizer, MAX_HOLDING, MIN_PRICE, MAX_PRICE
-from gym_rlf.envs.Parameters import TickSize, Lambda, sigma, kappa, p_e
+from gym_rlf.envs.rlf_env import RLFEnv, MIN_PRICE, MAX_PRICE
+from gym_rlf.envs.Parameters import LotSize, TickSize, Lambda, sigma, kappa, p_e, M, K
 
+# Stable Baselines recommends to normalize continuous action space because the Baselines
+# agents only sample actions from a standard Gaussian.
+# We use a space normalizer to rescale the action space to [-LotSize * K, LotSize * K].
+action_space_normalizer = LotSize * K
+
+MAX_HOLDING = LotSize * M
 FUNC_PROPERTY_PENALTY = True
 IS_EPISODIC = True # this must be True if FUNC_PROPERTY_PENALTY is True
 
@@ -52,6 +58,7 @@ class MeanReversionEnv(RLFEnv):
   def reset(self):
     super(MeanReversionEnv, self).reset()
 
+    self._prices[0] = self._prices[1] = p_e
     return self._get_state()
 
   def step(self, action):

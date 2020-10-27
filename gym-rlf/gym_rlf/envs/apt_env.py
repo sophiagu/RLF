@@ -4,9 +4,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from gym import spaces
-from gym_rlf.envs.rlf_env import RLFEnv, action_space_normalizer, MAX_HOLDING, MIN_PRICE, MAX_PRICE
-from gym_rlf.envs.Parameters import TickSize, sigma, kappa, alpha, factor_alpha, factor_sensitivity, factor_sigma, p_e
+from gym_rlf.envs.rlf_env import RLFEnv, MIN_PRICE, MAX_PRICE
+from gym_rlf.envs.Parameters import LotSize, TickSize, sigma, kappa, alpha, factor_alpha, factor_sensitivity, factor_sigma, p_e, M, K
 
+# Stable Baselines recommends to normalize continuous action space because the Baselines
+# agents only sample actions from a standard Gaussian.
+# We use a space normalizer to rescale the action space to [-LotSize * K, LotSize * K].
+action_space_normalizer = LotSize * K
+
+MAX_HOLDING = LotSize * M
 IS_EPISODIC = True
 
 
@@ -57,8 +63,8 @@ class APTEnv(RLFEnv):
                      self._prices[self._step_counts % self._L]])
     
   def step(self, action):
-    ac1 = round(action[0] * action_space_normalizer)
-    ac2 = round(action[1] * action_space_normalizer)
+    ac1 = action[0] * action_space_normalizer
+    ac2 = action[1] * action_space_normalizer
 
     old_pos = self._positions[self._step_counts % self._L]
     old_factor_pos = self._factor_positions[self._step_counts % self._L]

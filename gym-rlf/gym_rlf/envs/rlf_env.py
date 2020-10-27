@@ -3,14 +3,8 @@ import numpy as np
 import os
 import tempfile
 
-from gym_rlf.envs.Parameters import TickSize, LotSize, M, K, p_e
+from gym_rlf.envs.Parameters import TickSize
 
-# Stable Baselines recommends to normalize continuous action space because the Baselines
-# agents only sample actions from a standard Gaussian.
-# We use a space normalizer to rescale the action space to [-LotSize * K, LotSize * K].
-action_space_normalizer = LotSize * K
-
-MAX_HOLDING = LotSize * M
 MIN_PRICE = round(TickSize, 2) # strictly positive price
 MAX_PRICE = round(TickSize * 10000, 2)
 
@@ -29,7 +23,6 @@ class RLFEnv(gym.Env):
   def reset(self):
     self._step_counts = 1
     self._prices = np.zeros(self._L)
-    self._prices[0] = self._prices[1] = p_e
     self._positions = np.zeros(self._L)
     self._pnls = np.zeros(self._L)
     self._costs = np.zeros(self._L)
