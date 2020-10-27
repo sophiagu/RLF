@@ -33,6 +33,7 @@ class RLFEnv(gym.Env):
     self._positions = np.zeros(self._L)
     self._pnls = np.zeros(self._L)
     self._costs = np.zeros(self._L)
+    self._rewards = np.zeros(self._L)
     self._states = []
     self._actions = []
 
@@ -47,7 +48,7 @@ class RLFEnv(gym.Env):
     # Returns the fraction of the number of states that violate a function property.
     # The return value is always between 0 and 1.
     pass
-
+    
   def step(self, action):
     raise NotImplementedError
 

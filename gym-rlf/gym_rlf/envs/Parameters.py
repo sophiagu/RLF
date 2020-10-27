@@ -6,7 +6,7 @@ OptionSize = 100
 M = 10 # max round lots for holding
 K = 5 # max round lots for each trading action
 H = 5 # mean reversion half life
-S0 = 100
+S0 = 50
 
 Lambda = math.log(2) / H
 sigma = .1

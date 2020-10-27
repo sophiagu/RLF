@@ -55,7 +55,7 @@ class MeanReversionEnv(RLFEnv):
     return self._get_state()
 
   def step(self, action):
-    ac = round(action[0] * action_space_normalizer)
+    ac = action[0] * action_space_normalizer
 
     old_pos = self._positions[self._step_counts % self._L]
     old_price = self._prices[self._step_counts % self._L]
@@ -67,7 +67,7 @@ class MeanReversionEnv(RLFEnv):
     trade_size = abs(new_pos - old_pos)
     cost = self._costs[self._step_counts % self._L] = TickSize * (trade_size + .01 * trade_size**2)
     PnL = self._pnls[self._step_counts % self._L] = (new_price - old_price) * old_pos - cost
-    reward = PnL - .5 * kappa * PnL**2
+    reward = self._rewards[self._step_counts % self._L] = PnL - .5 * kappa * PnL**2
 
     fn_penalty = 0
     if FUNC_PROPERTY_PENALTY: # incorporate function property
@@ -83,7 +83,7 @@ class MeanReversionEnv(RLFEnv):
     super(MeanReversionEnv, self).render()
 
     t = np.linspace(0, self._L, self._L)
-    fig, axs = plt.subplots(3, 1, figsize=(16, 24), constrained_layout=True)
+    _, axs = plt.subplots(3, 1, figsize=(16, 24), constrained_layout=True)
     axs[0].plot(t, self._prices)
     axs[1].plot(t, self._positions)
     axs[2].plot(t, np.cumsum(self._pnls))
@@ -94,8 +94,17 @@ class MeanReversionEnv(RLFEnv):
     plt.xlabel('steps')
     plt.savefig('{}/plot_{}.png'.format(self._folder_name, self._render_counts))
     plt.close()
-    plt.plot(t, np.cumsum(self._costs), label='cumulative costs')
-    plt.plot(t, np.cumsum(self._pnls + self._costs), label='cumulative profits')
-    plt.legend()
-    plt.savefig('{}/costs_and_profits_plot_{}.png'.format(self._folder_name, self._render_counts))
+    
+    _, axs2 = plt.subplots(4, 1, figsize=(16, 32), constrained_layout=True)
+    axs2[0].plot(t, self._rewards)
+    axs2[1].plot(t, np.cumsum(self._rewards))
+    axs2[2].plot(t, np.cumsum(self._costs))
+    axs2[3].plot(t, np.cumsum(self._pnls + self._costs))
+    axs2[0].set_ylabel('reward per timestep')
+    axs2[1].set_ylabel('cumulative reward')
+    axs2[2].set_ylabel('cumulative costs')
+    axs2[3].set_ylabel('cumulative revenues')
+    plt.title('Out-of-sample reward and cost of RL agent')
+    plt.xlabel('steps')
+    plt.savefig('{}/reward_and_cost_{}.png'.format(self._folder_name, self._render_counts))
     plt.close()
