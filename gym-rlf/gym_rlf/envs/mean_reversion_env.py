@@ -13,7 +13,7 @@ from gym_rlf.envs.Parameters import LotSize, TickSize, Lambda, sigma, kappa, p_e
 # We use a space normalizer to rescale the action space to [-LotSize * K, LotSize * K].
 ACTION_SPACE_NORMALIZER = LotSize * K
 MAX_HOLDING = LotSize * M
-FUNC_PROPERTY_PENALTY = True
+FUNC_PROPERTY_PENALTY = False
 
 
 class MeanReversionEnv(RLFEnv):
@@ -69,8 +69,8 @@ class MeanReversionEnv(RLFEnv):
       max(min(old_pos + ac, MAX_HOLDING), -MAX_HOLDING)
     new_price = self._prices[self._step_counts] = self._next_price(old_price)
 
-    trade_size = abs(new_pos - old_pos)
-    cost = self._costs[self._step_counts] = TickSize * (trade_size + .01 * trade_size**2)
+    trade = new_pos - old_pos
+    cost = self._costs[self._step_counts] = TickSize * (abs(trade) + .01 * trade**2)
     PnL = self._pnls[self._step_counts] = (new_price - old_price) * old_pos - cost
     reward = self._rewards[self._step_counts] = PnL - .5 * kappa * PnL**2
 
