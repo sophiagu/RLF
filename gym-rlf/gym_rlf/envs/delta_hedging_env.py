@@ -50,7 +50,7 @@ class DeltaHedgingEnv(RLFEnv):
   def _get_state(self):
     return np.array([
       self._positions[self._step_counts],
-      self._L - self._step_counts,
+      self._L + 1 - self._step_counts,
       self._prices[self._step_counts - 1],
       self._prices[self._step_counts],
     ])
