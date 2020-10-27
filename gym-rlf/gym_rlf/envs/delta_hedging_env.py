@@ -64,16 +64,20 @@ class DeltaHedgingEnv(RLFEnv):
 
     return penalty / num_prev_states
 
-  # def _learn_func_property(self):
-  #   if len(self._states) <= 2: return 0
-  #   num_prev_states = len(self._states) - 2
-  #   penalty = 0
-  #   for i in range(num_prev_states):
-  #     for j in range(i + 1, num_prev_states + 1):
-  #       penalty += convex(self._states[i], self._states[j], self._states[-1],
-  #                         self._actions[i], self._actions[j], self._actions[-1])
-  #
-  #   return penalty / (num_prev_states * (num_pre_states + 1))
+#   def _learn_func_property(self):
+#     if len(self._states) <= 2: return 0
+#     num_prev_states = len(self._states) - 2
+#     penalty = 0
+#     for i in range(num_prev_states):
+#       for j in range(i + 1, num_prev_states + 1):
+#         min_id = max_id = -1
+#         if self._states[i] < self._states[min_id]: min_id = i
+#         if self._states[j] < self._states[min_id]: min_id = j
+#         if self._states[i] > self._states[max_id]: max_id = i
+#         if self._states[j] > self._states[max_id]: max_id = j
+#         mid_id = i + j - 1 - min_id - max_id
+#         penalty += convex(self._states[min_id], self._states[mid_id], self._states[max_id],
+#                           self._actions[min_id], self._actions[mid_id], self._actions[max_id])
 
   def reset(self):
     super(DeltaHedgingEnv, self).reset()
