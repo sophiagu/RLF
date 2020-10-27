@@ -10,10 +10,8 @@ from gym_rlf.envs.Parameters import LotSize, TickSize, sigma, kappa, alpha, fact
 # Stable Baselines recommends to normalize continuous action space because the Baselines
 # agents only sample actions from a standard Gaussian.
 # We use a space normalizer to rescale the action space to [-LotSize * K, LotSize * K].
-action_space_normalizer = LotSize * K
-
+ACTION_SPACE_NORMALIZER = LotSize * K
 MAX_HOLDING = LotSize * M
-IS_EPISODIC = True
 
 
 class APTEnv(RLFEnv):
@@ -52,47 +50,46 @@ class APTEnv(RLFEnv):
   def reset(self):
     super(APTEnv, self).reset()
 
-    self._factor_prices = np.zeros(self._L+1)
+    self._factor_prices = np.zeros(self._L + 2)
     self._factor_prices[0] = p_e
-    self._factor_positions = np.zeros(self._L+1)
+    self._factor_positions = np.zeros(self._L + 2)
     return self._get_state()
 
   def _get_state(self):
-    return np.array([self._positions[self._step_counts % self._L],
-                     self._factor_positions[self._step_counts % self._L],
-                     self._prices[self._step_counts % self._L]])
+    return np.array([self._positions[self._step_counts],
+                     self._factor_positions[self._step_counts],
+                     self._prices[self._step_counts]])
     
   def step(self, action):
-    ac1 = action[0] * action_space_normalizer
-    ac2 = action[1] * action_space_normalizer
+    ac1 = action[0] * ACTION_SPACE_NORMALIZER
+    ac2 = action[1] * ACTION_SPACE_NORMALIZER
 
-    old_pos = self._positions[self._step_counts % self._L]
-    old_factor_pos = self._factor_positions[self._step_counts % self._L]
-    old_price = self._prices[self._step_counts % self._L]
-    old_factor_price = self._factor_prices[self._step_counts % self._L]
+    old_pos = self._positions[self._step_counts]
+    old_factor_pos = self._factor_positions[self._step_counts]
+    old_price = self._prices[self._step_counts]
+    old_factor_price = self._factor_prices[self._step_counts]
     self._step_counts += 1
-    new_pos = self._positions[self._step_counts % self._L] =\
+    new_pos = self._positions[self._step_counts] =\
       max(min(old_pos + ac1, MAX_HOLDING), -MAX_HOLDING)
-    new_factor_pos = self._factor_positions[self._step_counts % self._L] =\
+    new_factor_pos = self._factor_positions[self._step_counts] =\
       max(min(old_factor_pos + ac2, MAX_HOLDING), -MAX_HOLDING)
     new_price, new_factor_price =\
-      self._prices[self._step_counts % self._L], self._factor_prices[self._step_counts % self._L] =\
+      self._prices[self._step_counts], self._factor_prices[self._step_counts] =\
       self._next_price(old_price, old_factor_price)
 
     trade_size = abs(new_pos - old_pos) + abs(new_factor_pos - old_factor_pos)
     cost = TickSize * (trade_size + 1e-2 * trade_size**2)
     PnL = (new_price - old_price) * old_pos + (new_factor_price - old_factor_price) * old_factor_pos - cost
-    self._costs[self._step_counts % self._L] = cost
-    self._profits[self._step_counts % self._L] = PnL + cost
-    self._rewards[self._step_counts % self._L] = PnL - .5 * kappa * PnL**2
+    self._costs[self._step_counts] = cost
+    self._profits[self._step_counts] = PnL + cost
+    self._rewards[self._step_counts] = PnL - .5 * kappa * PnL**2
 
-    done = self._step_counts == self._L if IS_EPISODIC else False
-    return self._get_state(), self._rewards[self._step_counts % self._L], done, {}
+    return self._get_state(), self._rewards[self._step_counts], self._step_counts >= self._L + 1, {}
  
   def render(self, mode='human'):
     super(APTEnv, self).render()
 
-    t = np.linspace(0, self._L, self._L+1)
+    t = np.linspace(0, self._L + 1, self._L + 2)
     fig, axs = plt.subplots(5, 1, figsize=(16, 40), constrained_layout=True)
     axs[0].plot(t, self._prices)
     axs[1].plot(t, self._factor_prices)

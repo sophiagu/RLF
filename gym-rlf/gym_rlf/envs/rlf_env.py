@@ -22,11 +22,11 @@ class RLFEnv(gym.Env):
 
   def reset(self):
     self._step_counts = 1
-    self._prices = np.zeros(self._L)
-    self._positions = np.zeros(self._L)
-    self._pnls = np.zeros(self._L)
-    self._costs = np.zeros(self._L)
-    self._rewards = np.zeros(self._L)
+    self._prices = np.zeros(self._L + 2)
+    self._positions = np.zeros(self._L + 2)
+    self._pnls = np.zeros(self._L + 2)
+    self._costs = np.zeros(self._L + 2)
+    self._rewards = np.zeros(self._L + 2)
     self._states = []
     self._actions = []
 

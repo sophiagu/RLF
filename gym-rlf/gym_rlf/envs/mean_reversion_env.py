@@ -11,11 +11,9 @@ from gym_rlf.envs.Parameters import LotSize, TickSize, Lambda, sigma, kappa, p_e
 # Stable Baselines recommends to normalize continuous action space because the Baselines
 # agents only sample actions from a standard Gaussian.
 # We use a space normalizer to rescale the action space to [-LotSize * K, LotSize * K].
-action_space_normalizer = LotSize * K
-
+ACTION_SPACE_NORMALIZER = LotSize * K
 MAX_HOLDING = LotSize * M
 FUNC_PROPERTY_PENALTY = True
-IS_EPISODIC = True # this must be True if FUNC_PROPERTY_PENALTY is True
 
 
 class MeanReversionEnv(RLFEnv):
@@ -41,9 +39,9 @@ class MeanReversionEnv(RLFEnv):
 
   def _get_state(self):
     return np.array([
-      self._positions[self._step_counts % self._L],
-      self._prices[(self._step_counts - 1) % self._L],
-      self._prices[self._step_counts % self._L],
+      self._positions[self._step_counts],
+      self._prices[self._step_counts - 1],
+      self._prices[self._step_counts],
     ])
     
   def _learn_func_property(self):
@@ -62,19 +60,19 @@ class MeanReversionEnv(RLFEnv):
     return self._get_state()
 
   def step(self, action):
-    ac = action[0] * action_space_normalizer
+    ac = action[0] * ACTION_SPACE_NORMALIZER
 
-    old_pos = self._positions[self._step_counts % self._L]
-    old_price = self._prices[self._step_counts % self._L]
+    old_pos = self._positions[self._step_counts]
+    old_price = self._prices[self._step_counts]
     self._step_counts += 1
-    new_pos = self._positions[self._step_counts % self._L] =\
+    new_pos = self._positions[self._step_counts] =\
       max(min(old_pos + ac, MAX_HOLDING), -MAX_HOLDING)
-    new_price = self._prices[self._step_counts % self._L] = self._next_price(old_price)
+    new_price = self._prices[self._step_counts] = self._next_price(old_price)
 
     trade_size = abs(new_pos - old_pos)
-    cost = self._costs[self._step_counts % self._L] = TickSize * (trade_size + .01 * trade_size**2)
-    PnL = self._pnls[self._step_counts % self._L] = (new_price - old_price) * old_pos - cost
-    reward = self._rewards[self._step_counts % self._L] = PnL - .5 * kappa * PnL**2
+    cost = self._costs[self._step_counts] = TickSize * (trade_size + .01 * trade_size**2)
+    PnL = self._pnls[self._step_counts] = (new_price - old_price) * old_pos - cost
+    reward = self._rewards[self._step_counts] = PnL - .5 * kappa * PnL**2
 
     fn_penalty = 0
     if FUNC_PROPERTY_PENALTY: # incorporate function property
@@ -82,14 +80,13 @@ class MeanReversionEnv(RLFEnv):
       self._actions.append(ac)
       fn_penalty = abs(reward) * self._learn_func_property()
 
-    done = self._step_counts == self._L if IS_EPISODIC else False
     info = {'pnl': PnL, 'cost': cost, 'reward': reward, 'penalty': fn_penalty}
-    return self._get_state(), reward - fn_penalty, done, info
+    return self._get_state(), reward - fn_penalty, self._step_counts >= self._L + 1, info
  
   def render(self, mode='human'):
     super(MeanReversionEnv, self).render()
 
-    t = np.linspace(0, self._L, self._L)
+    t = np.linspace(0, self._L + 1, self._L + 2)
     _, axs = plt.subplots(3, 1, figsize=(16, 24), constrained_layout=True)
     axs[0].plot(t, self._prices)
     axs[1].plot(t, self._positions)
