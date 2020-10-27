@@ -83,7 +83,7 @@ if __name__ == '__main__':
                       help='Number of trials to search for optimal hyperparameters.')
   parser.add_argument('--evaluation_epochs', type=int, default=100,
                       help='The length that the model runs when evaluating hyperparameters.')
-  parser.add_argument('--evaluate_model_per_epochs', type=int, default=100,
+  parser.add_argument('--evaluate_model_per_epochs', type=int, default=10,
                       help='How often should we evaluate the model during training.')
   parser.add_argument('--max_train_epochs', type=int, default=10000,
                       help='Max number of epochs that the model runs during training.')
