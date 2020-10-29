@@ -30,15 +30,17 @@ def _train(env_id, model_params, total_epochs, use_sigmoid_layer=False, is_evalu
     envs = SubprocVecEnv([make_env(env_id) for _ in range(NUM_CPU)])
   envs = VecNormalize(envs) # normalize the envs during training and evaluation
 
+  # activation fn: use tanh for delta hedging and relu for mean reversion
+  # learning rate: using 1e-7 for delta hedging and 1e-5 for mean reversion
   if use_sigmoid_layer:
     model = PPO2(SigmoidMlpPolicy, envs, n_steps=1, nminibatches=1,
-                 learning_rate=lambda f: f * 1e-5, verbose=1,
-                 policy_kwargs=dict(act_fun=tf.nn.relu),
+                 learning_rate=lambda f: f * 1e-7, verbose=1,
+                 policy_kwargs=dict(act_fun=tf.nn.tanh),
                  **model_params)
   else:
     model = PPO2(MlpLstmPolicy, envs, n_steps=1, nminibatches=1,
-                 learning_rate=lambda f: f * 1e-5, verbose=1,
-                 policy_kwargs=dict(act_fun=tf.nn.relu),
+                 learning_rate=lambda f: f * 1e-7, verbose=1,
+                 policy_kwargs=dict(act_fun=tf.nn.tanh),
                  **model_params)
 
   model.learn(total_timesteps=total_epochs * L)
