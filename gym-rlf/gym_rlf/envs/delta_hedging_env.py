@@ -17,13 +17,15 @@ ACTION_SPACE_NORMALIZER = OptionSize
 FUNC_PROPERTY_PENALTY = False
 
 def BSM_call_price_and_delta(K, tau, St, sigma):
-  if tau <= 0: return 0, 0
-  # assuming zero interest rate
   numerator = math.log(St / K) + (.5 * sigma**2) * tau
-  denominator = sigma * math.sqrt(tau)
-  d1 = numerator / denominator
+  if tau > 0:
+    denominator = sigma * math.sqrt(tau)
+    d1 = numerator / denominator
+  else:
+    denominator = 0.
+    d1 = float('inf')
   d2 = d1 - denominator
-  price = St * norm.cdf(d1) - K * norm.cdf(d2)
+  price = max(St * norm.cdf(d1) - K * norm.cdf(d2), 0.)
   delta = norm.cdf(d1)
   return price, delta
     
@@ -64,22 +66,22 @@ class DeltaHedgingEnv(RLFEnv):
 
     return penalty / num_prev_states
 
-  #   def _learn_func_property(self):
-  #     if len(self._states) <= 2: return 0
-  #     num_prev_states = len(self._states) - 2
-  #     penalty = 0
-  #     for i in range(num_prev_states):
-  #       for j in range(i + 1, num_prev_states + 1):
-  #         min_id = max_id = -1
-  #         if self._states[i] < self._states[min_id]: min_id = i
-  #         if self._states[j] < self._states[min_id]: min_id = j
-  #         if self._states[i] > self._states[max_id]: max_id = i
-  #         if self._states[j] > self._states[max_id]: max_id = j
-  #         mid_id = i + j - 1 - min_id - max_id
-  #         penalty += convex(self._states[min_id], self._states[mid_id], self._states[max_id],
-  #                           self._actions[min_id], self._actions[mid_id], self._actions[max_id])
+  # def _learn_func_property(self):
+  #   if len(self._states) <= 2: return 0
+  #   num_prev_states = len(self._states) - 2
+  #   penalty = 0
+  #   for i in range(num_prev_states):
+  #     for j in range(i + 1, num_prev_states + 1):
+  #       min_id = max_id = -1
+  #       if self._states[i] < self._states[min_id]: min_id = i
+  #       if self._states[j] < self._states[min_id]: min_id = j
+  #       if self._states[i] > self._states[max_id]: max_id = i
+  #       if self._states[j] > self._states[max_id]: max_id = j
+  #       mid_id = i + j - 1 - min_id - max_id
+  #       penalty += convex(self._states[min_id], self._states[mid_id], self._states[max_id],
+  #                         self._actions[min_id], self._actions[mid_id], self._actions[max_id])
 
-  #   return penalty / (num_prev_states * (num_prev_states + 1))
+    return penalty / (num_prev_states * (num_prev_states + 1))
 
   def reset(self):
     super(DeltaHedgingEnv, self).reset()
@@ -114,14 +116,13 @@ class DeltaHedgingEnv(RLFEnv):
     if FUNC_PROPERTY_PENALTY: # incorporate function property
       self._states.append(new_price)
       self._actions.append(ac)
-      fn_penalty = abs(reward) * self._learn_func_property()
+      fn_penalty = 5 / kappa_dh * self._learn_func_property()
 
     info = {'pnl': PnL, 'cost': cost, 'reward': reward, 'penalty': fn_penalty}
     return self._get_state(), reward - fn_penalty, self._step_counts >= self._L + 1, info
  
   def render(self, mode='human'):
     super(DeltaHedgingEnv, self).render()
-    print('first 3 option prices =', self._option_prices[0], self._option_prices[1], self._option_prices[2])
 
     t = np.linspace(0, self._L + 1, self._L + 2)
     fig, axs = plt.subplots(4, 1, figsize=(16, 32), constrained_layout=True)

@@ -78,7 +78,7 @@ class MeanReversionEnv(RLFEnv):
     if FUNC_PROPERTY_PENALTY: # incorporate function property
       self._states.append(new_price)
       self._actions.append(ac)
-      fn_penalty = abs(reward) * self._learn_func_property()
+      fn_penalty = 5 / kappa * self._learn_func_property()
 
     info = {'pnl': PnL, 'cost': cost, 'reward': reward, 'penalty': fn_penalty}
     return self._get_state(), reward - fn_penalty, self._step_counts >= self._L + 1, info
