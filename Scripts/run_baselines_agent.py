@@ -81,13 +81,13 @@ if __name__ == '__main__':
                       help='Whether or not to use SigmoidMlpPolicy. Drop this flag to use MlpPolicy.')
   parser.add_argument('--optimize', type=bool, default=False,
                       help='Search for optimal hyperparameters. Drop this flag to run the actual training.')
-  parser.add_argument('--num_trials', type=int, default=100,
+  parser.add_argument('--num_trials', type=int, default=10,
                       help='Number of trials to search for optimal hyperparameters.')
-  parser.add_argument('--evaluation_epochs', type=int, default=100,
+  parser.add_argument('--evaluation_epochs', type=int, default=10,
                       help='The length that the model runs when evaluating hyperparameters.')
   parser.add_argument('--evaluate_model_per_epochs', type=int, default=10,
                       help='How often should we evaluate the model during training.')
-  parser.add_argument('--max_train_epochs', type=int, default=10000,
+  parser.add_argument('--max_train_epochs', type=int, default=5000,
                       help='Max number of epochs that the model runs during training.')
   parser.add_argument('--num_random_initializations', type=int, default=10,
                       help='Number of trials for different initializations of weights.')
@@ -126,11 +126,11 @@ if __name__ == '__main__':
     print('best value achieved =', -study.best_value)
     print('best trial =', study.best_trial)
 
-  ######## Training ########
+  # ######## Training ########
   assert args.max_train_epochs % args.evaluate_model_per_epochs == 0
   best_sr = None
   best_train_epochs = None
-  
+
   for _ in range(args.num_random_initializations):
     patience_counter = 0
     for i in range(1, args.max_train_epochs // args.evaluate_model_per_epochs + 1):
@@ -158,4 +158,3 @@ if __name__ == '__main__':
   sharpe_ratio = _eval_model(model, env_id, envs.observation_space.shape, args.num_eps, True)
   print('average test sharpe ratio={}'.format(sharpe_ratio))
   print('hyperparamters used={}'.format(study.best_params))
-  envs.close()
