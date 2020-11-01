@@ -141,7 +141,7 @@ class DeltaHedgingEnv(RLFEnv):
     axs[0].plot(t, self._prices)
     axs[1].plot(t, self._option_prices)
     axs[2].plot(t, self._positions, label='position')
-    axs[2].plot(t, -OptionSize * self._deltas, label='benchmark position')
+    axs[2].plot(t, self._benchmark_positions, label='benchmark position')
     axs[3].plot(t, np.cumsum(self._pnls), label='P/L')
     axs[3].plot(t, np.cumsum(self._bm_pnls), label='benchmark P/L')
     axs[0].set_ylabel('stock price')
