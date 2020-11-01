@@ -126,7 +126,7 @@ if __name__ == '__main__':
     print('best value achieved =', -study.best_value)
     print('best trial =', study.best_trial)
 
-  # ######## Training ########
+  ######### Training ########
   assert args.max_train_epochs % args.evaluate_model_per_epochs == 0
   best_sr = None
   best_train_epochs = None
