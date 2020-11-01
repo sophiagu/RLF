@@ -72,15 +72,16 @@ class DeltaHedgingEnv(RLFEnv):
   #   penalty = 0
   #   for i in range(num_prev_states):
   #     for j in range(i + 1, num_prev_states + 1):
-  #       min_id = max_id = -1
-  #       if self._states[i] < self._states[min_id]: min_id = i
+  #       min_id, max_id = i, j
   #       if self._states[j] < self._states[min_id]: min_id = j
+  #       if self._states[-1] < self._states[min_id]: min_id = -1
   #       if self._states[i] > self._states[max_id]: max_id = i
-  #       if self._states[j] > self._states[max_id]: max_id = j
+  #       if self._states[-1] > self._states[max_id]: max_id = -1
   #       mid_id = i + j - 1 - min_id - max_id
+  #       assert mid_id in [i, j, -1], 'Invalid mid_id={}'.format(mid_id)
   #       penalty += convex(self._states[min_id], self._states[mid_id], self._states[max_id],
   #                         self._actions[min_id], self._actions[mid_id], self._actions[max_id])
-
+  #
   # return penalty / (num_prev_states * (num_prev_states + 1))
 
   def reset(self):
@@ -88,29 +89,40 @@ class DeltaHedgingEnv(RLFEnv):
 
     self._prices[0] = self._prices[1] = S0
     self._option_prices = np.zeros(self._L + 2)
+    self._benchmark_positions = np.zeros(self._L + 2)
+    self._bm_pnls = np.zeros(self._L + 2)
+
     option_price, delta = BSM_call_price_and_delta(S0, self._L, S0, sigma_dh)
     self._option_prices[0] = self._option_prices[1] = option_price
     self._positions[0] = self._positions[1] = -delta * OptionSize
+    self._benchmark_positions[0] = self._benchmark_positions[1] = -delta * OptionSize
     return self._get_state()
 
   def step(self, action):
     ac = action[0] * ACTION_SPACE_NORMALIZER
     
     old_pos = self._positions[self._step_counts]
+    old_bm_pos = self._benchmark_positions[self._step_counts]
     old_price = self._prices[self._step_counts]
     old_option_price = self._option_prices[self._step_counts]
 
     self._step_counts += 1
     new_pos = self._positions[self._step_counts] = max(min(old_pos + ac, 0), -OptionSize)
     new_price = self._prices[self._step_counts] = self._next_price(old_price)
-    new_option_price = self._option_prices[self._step_counts] =\
-      BSM_call_price_and_delta(S0,  self._L + 1 - self._step_counts, new_price, sigma_dh)[0]
+    new_option_price, delta =\
+      BSM_call_price_and_delta(S0,  self._L + 1 - self._step_counts, new_price, sigma_dh)
+    self._option_prices[self._step_counts] = new_option_price
+    new_bm_pos = self._benchmark_positions[self._step_counts] = -OptionSize * delta
 
-    trade = new_pos - old_pos
+    trade, bm_trade = new_pos - old_pos, new_bm_pos - old_bm_pos
     cost = self._costs[self._step_counts] = TickSize * (abs(trade) + .01 * trade**2)
     PnL = self._pnls[self._step_counts] =\
       (new_price - old_price) * old_pos + (new_option_price - old_option_price) * OptionSize - cost
     reward = self._rewards[self._step_counts] = PnL - .5 * kappa_dh * PnL**2
+    
+    bm_cost = TickSize * (abs(bm_trade) + .01 * bm_trade**2)
+    self._bm_pnls[self._step_counts] =\
+      (new_price - old_price) * old_bm_pos + (new_option_price - old_option_price) * OptionSize - bm_cost
 
     fn_penalty = 0
     if FUNC_PROPERTY_PENALTY: # incorporate function property
@@ -128,12 +140,16 @@ class DeltaHedgingEnv(RLFEnv):
     fig, axs = plt.subplots(4, 1, figsize=(16, 32), constrained_layout=True)
     axs[0].plot(t, self._prices)
     axs[1].plot(t, self._option_prices)
-    axs[2].plot(t, self._positions)
-    axs[3].plot(t, np.cumsum(self._pnls))
+    axs[2].plot(t, self._positions, label='position')
+    axs[2].plot(t, -OptionSize * self._deltas, label='benchmark position')
+    axs[3].plot(t, np.cumsum(self._pnls), label='P/L')
+    axs[3].plot(t, np.cumsum(self._bm_pnls), label='benchmark P/L')
     axs[0].set_ylabel('stock price')
     axs[1].set_ylabel('option price')
     axs[2].set_ylabel('position')
     axs[3].set_ylabel('cumulative P/L')
+    axs[2].legend()
+    axs[3].legend()
     plt.title('Out-of-sample simulation of RL agent')
     plt.xlabel('steps')
     plt.savefig('{}/plot_{}.png'.format(self._folder_name, self._render_counts))
