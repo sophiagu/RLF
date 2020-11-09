@@ -21,7 +21,7 @@ from stable_baselines import PPO2
 
 NUM_CPU = multiprocessing.cpu_count()
 L = 1000
-MAX_PATIENCE = 4
+MAX_PATIENCE = 5
 
 def _train(env_id, model_params, total_epochs, use_sigmoid_layer=False, is_evaluation=False):
   if is_evaluation: # evaluate_policy() must only take one environment
@@ -31,7 +31,7 @@ def _train(env_id, model_params, total_epochs, use_sigmoid_layer=False, is_evalu
   envs = VecNormalize(envs) # normalize the envs during training and evaluation
 
   # activation fn: use tanh for delta hedging and relu for mean reversion
-  # learning rate: using 1e-7 for delta hedging and 1e-5 for mean reversion
+  # learning rate: use 1e-7 for delta hedging and 1e-5 for mean reversion
   if use_sigmoid_layer:
     model = PPO2(SigmoidMlpPolicy, envs, n_steps=1, nminibatches=1,
                  learning_rate=lambda f: f * 1e-7, verbose=1,
@@ -87,7 +87,7 @@ if __name__ == '__main__':
                       help='The length that the model runs when evaluating hyperparameters.')
   parser.add_argument('--evaluate_model_per_epochs', type=int, default=10,
                       help='How often should we evaluate the model during training.')
-  parser.add_argument('--max_train_epochs', type=int, default=5000,
+  parser.add_argument('--max_train_epochs', type=int, default=1000,
                       help='Max number of epochs that the model runs during training.')
   parser.add_argument('--num_random_initializations', type=int, default=10,
                       help='Number of trials for different initializations of weights.')
