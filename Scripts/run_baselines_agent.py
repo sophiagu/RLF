@@ -21,7 +21,7 @@ from stable_baselines import PPO2
 
 NUM_CPU = multiprocessing.cpu_count()
 L = 1000
-MAX_PATIENCE = 5
+MAX_PATIENCE = 10
 
 def _train(env_id, model_params, total_epochs, use_sigmoid_layer=False, is_evaluation=False):
   if is_evaluation: # evaluate_policy() must only take one environment
