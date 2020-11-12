@@ -82,7 +82,7 @@ class DeltaHedgingEnv(RLFEnv):
   #       penalty += convex(self._states[min_id], self._states[mid_id], self._states[max_id],
   #                         self._actions[min_id], self._actions[mid_id], self._actions[max_id])
   #
-  #   return penalty / (num_prev_states * (num_prev_states + 1))
+  #   return penalty * 2 / (num_prev_states * (num_prev_states + 1))
 
   def reset(self):
     super(DeltaHedgingEnv, self).reset()
