@@ -52,7 +52,7 @@ class DeltaHedgingEnv(RLFEnv):
   def _get_state(self):
     return np.array([
       self._positions[self._step_counts],
-      self._L + 1 - self._step_counts,
+      self._L + 2 - self._step_counts,
       self._prices[self._step_counts - 1],
       self._prices[self._step_counts],
     ])
@@ -110,7 +110,7 @@ class DeltaHedgingEnv(RLFEnv):
     new_pos = self._positions[self._step_counts] = max(min(old_pos + ac, 0), -OptionSize)
     new_price = self._prices[self._step_counts] = self._next_price(old_price)
     new_option_price, delta =\
-      BSM_call_price_and_delta(S0,  self._L + 1 - self._step_counts, new_price, sigma_dh)
+      BSM_call_price_and_delta(S0,  self._L + 2 - self._step_counts, new_price, sigma_dh)
     self._option_prices[self._step_counts] = new_option_price
     new_bm_pos = self._benchmark_positions[self._step_counts] = -OptionSize * delta
 
