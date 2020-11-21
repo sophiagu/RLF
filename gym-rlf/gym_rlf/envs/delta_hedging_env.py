@@ -39,7 +39,7 @@ class DeltaHedgingEnv(RLFEnv):
     # (underlying position), (time to maturity), (previous underlying price) and (current underlying price).
     self.observation_space = spaces.Box(
       low=np.array([-OptionSize, 0, MIN_PRICE, MIN_PRICE]),
-      high=np.array([0, self._L, MAX_PRICE, MAX_PRICE]),
+      high=np.array([0, self._L + 1, MAX_PRICE, MAX_PRICE]),
       shape=(4,))
 
   def _next_price(self, p):
