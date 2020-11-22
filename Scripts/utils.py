@@ -12,7 +12,7 @@ def make_env(env_id):
 def ppo2_params(trial):
   # See https://github.com/optuna/optuna/blob/master/optuna/trial/_trial.py for documentation.
   return {
-    'ent_coef': trial.suggest_loguniform('ent_coef', 1e-5, .1),
+    'ent_coef': trial.suggest_loguniform('ent_coef', .01, .3),
     'vf_coef': trial.suggest_uniform('vf_coef', .1, .9),
     'lam': trial.suggest_uniform('lam', .8, 1.),
   }
