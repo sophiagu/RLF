@@ -5,6 +5,7 @@ This repo uses *off-the-shelf* technologies (`gym` for constructing envs and `st
 ### Folder descriptions
 All the sample environments are living under the folder `gym-rlf/`. Right now we have the following environments:
 - `MeanReversionEnv`: A custom env for a security whose price process exhibits mean reversion property and its log value follows an Ornstein-Uhlenbeck process;
+- `ARMAEnv`: Similar to `MeanReversionEnv` but uses an ARMA(2,1) process;
 - `APTEnv`: A custom env for a single factor Arbitrage Pricing Theorem model.
 - `DeltaHedgingEnv`: A custome env for delta hedging a European Call option with fixed strike and expiration.
 
