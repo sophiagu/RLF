@@ -11,6 +11,11 @@ register(
 )
 
 register(
+    id='ARMA-v0',
+    entry_point='gym_rlf.envs:ARMAEnv',
+)
+
+register(
     id='APT-v0',
     entry_point='gym_rlf.envs:APTEnv',
 )
