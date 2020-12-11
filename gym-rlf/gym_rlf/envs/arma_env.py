@@ -14,7 +14,7 @@ from gym_rlf.envs.Parameters import LotSize, TickSize, Lambda, theta, sigma, kap
 # We use a space normalizer to rescale the action space to [-LotSize * K, LotSize * K].
 ACTION_SPACE_NORMALIZER = LotSize * K
 MAX_HOLDING = LotSize * M
-FUNC_PROPERTY_PENALTY = True
+FUNC_PROPERTY_PENALTY = False
 
 
 class ARMAEnv(MeanReversionEnv):
