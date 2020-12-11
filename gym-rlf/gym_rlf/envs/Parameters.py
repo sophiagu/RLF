@@ -9,6 +9,7 @@ H = 5 # mean reversion half life
 S0 = 50
 
 Lambda = math.log(2) / H
+theta = .5
 sigma = .1
 sigma_dh = .01
 kappa = 1e-4
