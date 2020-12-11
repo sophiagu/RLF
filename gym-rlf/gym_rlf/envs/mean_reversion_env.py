@@ -17,8 +17,10 @@ FUNC_PROPERTY_PENALTY = False
 
 
 class MeanReversionEnv(RLFEnv):
-  def __init__(self):
-    super(MeanReversionEnv, self).__init__('mean_reversion_plots/')
+  def __init__(self, plot_folder_name=None):
+    if plot_folder_name is None:
+      plot_folder_name = 'mean_reversion_plots/'
+    super(MeanReversionEnv, self).__init__(plot_folder_name)
 
     self.action_space = spaces.Box(low=-1, high=1, shape=(1,))
     # Use a Box to represent the observation space with params:
