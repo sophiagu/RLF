@@ -34,13 +34,13 @@ def _train(env_id, model_params, total_epochs, use_sigmoid_layer=False, is_evalu
   # learning rate: use 1e-7 for delta hedging and 1e-5 for mean reversion
   if use_sigmoid_layer:
     model = PPO2(SigmoidMlpPolicy, envs, n_steps=1, nminibatches=1,
-                 learning_rate=lambda f: f * 1e-7, verbose=1,
-                 policy_kwargs=dict(act_fun=tf.nn.tanh),
+                 learning_rate=lambda f: f * 1e-5, verbose=1,
+                 policy_kwargs=dict(act_fun=tf.nn.relu),
                  **model_params)
   else:
     model = PPO2(MlpLstmPolicy, envs, n_steps=1, nminibatches=1,
-                 learning_rate=lambda f: f * 1e-7, verbose=1,
-                 policy_kwargs=dict(act_fun=tf.nn.tanh),
+                 learning_rate=lambda f: f * 1e-5, verbose=1,
+                 policy_kwargs=dict(act_fun=tf.nn.relu),
                  **model_params)
 
   model.learn(total_timesteps=total_epochs * L)
